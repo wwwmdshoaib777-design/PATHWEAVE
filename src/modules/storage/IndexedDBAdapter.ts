@@ -1,7 +1,7 @@
 import { ALL_STORES, StorageAdapter, StoreName } from './StorageAdapter';
 
 const DB_NAME = 'pathweave_local_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 interface StoredEnvelope<T> {
   id: string;

@@ -12,6 +12,7 @@ export const StudentProgressView: React.FC = () => {
     progressRecords,
     topicProgress,
     quizAttempts,
+    adaptiveRecommendations,
     openLessonReader,
     openQuizRunner,
   } = usePathweave();
@@ -79,29 +80,36 @@ export const StudentProgressView: React.FC = () => {
                   <th className="px-5 py-3">Subject</th>
                   <th className="px-5 py-3">Correct / Answered</th>
                   <th className="px-5 py-3">Accuracy</th>
+                  <th className="px-5 py-3">Adaptive Level</th>
                   <th className="px-5 py-3">Last Practiced</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {topicProgress.map((tp) => (
-                  <tr key={tp.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-3 font-medium text-slate-900">
-                      {pickLocalized(tp.topicLabel, language)}
-                    </td>
-                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
-                      {tp.subjectId === 'math' ? 'Mathematics' : 'Science'}
-                    </td>
-                    <td className="px-5 py-3 font-mono text-slate-700 tabular-nums">
-                      {tp.correctCount} / {tp.questionsAnswered}
-                    </td>
-                    <td className="px-5 py-3 font-mono font-semibold text-teal-800 tabular-nums">
-                      {tp.accuracyPercent}%
-                    </td>
-                    <td className="px-5 py-3 font-mono text-xs text-slate-500 tabular-nums whitespace-nowrap">
-                      {new Date(tp.lastPracticedAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
+                {topicProgress.map((tp) => {
+                  const rec = adaptiveRecommendations.find((r) => r.topicKey === tp.topicKey);
+                  return (
+                    <tr key={tp.id} className="hover:bg-slate-50">
+                      <td className="px-5 py-3 font-medium text-slate-900">
+                        {pickLocalized(tp.topicLabel, language)}
+                      </td>
+                      <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                        {tp.subjectId === 'math' ? 'Mathematics' : 'Science'}
+                      </td>
+                      <td className="px-5 py-3 font-mono text-slate-700 tabular-nums">
+                        {tp.correctCount} / {tp.questionsAnswered}
+                      </td>
+                      <td className="px-5 py-3 font-mono font-semibold text-teal-800 tabular-nums">
+                        {tp.accuracyPercent}%
+                      </td>
+                      <td className="px-5 py-3 font-mono text-xs text-slate-700 whitespace-nowrap">
+                        {rec ? rec.recommendedDifficulty : '—'}
+                      </td>
+                      <td className="px-5 py-3 font-mono text-xs text-slate-500 tabular-nums whitespace-nowrap">
+                        {new Date(tp.lastPracticedAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

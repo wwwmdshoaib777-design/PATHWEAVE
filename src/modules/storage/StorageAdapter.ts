@@ -5,6 +5,7 @@ export type StoreName =
   | 'quizzes'
   | 'quizQuestions'
   | 'topicProgress'
+  | 'adaptiveRecommendations'
   | 'progress'
   | 'quizAttempts'
   | 'downloads'
@@ -22,6 +23,7 @@ export const ALL_STORES: StoreName[] = [
   'quizzes',
   'quizQuestions',
   'topicProgress',
+  'adaptiveRecommendations',
   'progress',
   'quizAttempts',
   'downloads',

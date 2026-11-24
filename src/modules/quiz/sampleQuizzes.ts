@@ -1,4 +1,5 @@
 import { Quiz } from '../../types/domain';
+import { TOPIC_DEFINITIONS } from '../adaptive/adaptiveQuestionBank';
 
 export const SAMPLE_QUIZZES: Quiz[] = [
   {
@@ -13,19 +14,18 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       hi: 'भिन्न और अनुपात अभ्यास प्रश्नोत्तरी',
     },
     description: {
-      en: '4 practical questions covering equivalent fractions, simplification, and ratios.',
-      kn: 'ಸಮಾನ ಭಿನ್ನರಾಶಿಗಳು, ಸರಳೀಕರಣ ಮತ್ತು ಅನುಪಾತಗಳ 4 ಪ್ರಾಯೋಗಿಕ ಪ್ರಶ್ನೆಗಳು.',
-      hi: 'समतुल्य भिन्न, सरलीकरण और अनुपात पर आधारित 4 व्यावहारिक प्रश्न।',
+      en: '4 practical questions covering equivalent fractions, simplification, ratios, and geometry.',
+      kn: 'ಸಮಾನ ಭಿನ್ನರಾಶಿಗಳು, ಸರಳೀಕರಣ, ಅನುಪಾತ ಮತ್ತು ಜ್ಯಾಮಿತಿಯ 4 ಪ್ರಾಯೋಗಿಕ ಪ್ರಶ್ನೆಗಳು.',
+      hi: 'समतुल्य भिन्न, सरलीकरण, अनुपात और ज्यामिति पर आधारित 4 व्यावहारिक प्रश्न।',
     },
     questions: [
       {
         id: 'q-m-1',
         topicKey: 'fractions',
-        topicLabel: {
-          en: 'Fractions & Decimals',
-          kn: 'ಭಿನ್ನರಾಶಿಗಳು ಮತ್ತು ದಶಮಾಂಶಗಳು',
-          hi: 'भिन्न और दशमलव',
-        },
+        topicLabel: TOPIC_DEFINITIONS.fractions.label,
+        difficulty: 'Easy',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
         prompt: {
           en: 'Which fraction is equivalent to 3/4?',
           kn: '3/4 ಗೆ ಸಮಾನವಾದ ಭಿನ್ನರಾಶಿ ಯಾವುದು?',
@@ -47,11 +47,10 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-m-2',
         topicKey: 'fractions',
-        topicLabel: {
-          en: 'Fractions & Decimals',
-          kn: 'ಭಿನ್ನರಾಶಿಗಳು ಮತ್ತು ದಶಮಾಂಶಗಳು',
-          hi: 'भिन्न और दशमलव',
-        },
+        topicLabel: TOPIC_DEFINITIONS.fractions.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
         prompt: {
           en: 'What is the simplest form of 12/18?',
           kn: '12/18 ರ ಅತ್ಯಂತ ಸರಳ ರೂಪ ಯಾವುದು?',
@@ -73,11 +72,12 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-m-3',
         topicKey: 'ratios',
-        topicLabel: {
-          en: 'Ratios & Proportions',
-          kn: 'ಅನುಪಾತ ಮತ್ತು ಸಮಾನುಪಾತ',
-          hi: 'अनुपात और समानुपात',
-        },
+        topicLabel: TOPIC_DEFINITIONS.ratios.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.ratios.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.ratios.prerequisiteTopicLabel,
         prompt: {
           en: 'If 4 kg of millet costs ₹160, how much will 7 kg cost at the same rate?',
           kn: '4 ಕೆಜಿ ಸಿರಿಧಾನ್ಯದ ಬೆಲೆ ₹160 ಆದರೆ, ಅದೇ ದರದಲ್ಲಿ 7 ಕೆಜಿಗೆ ಎಷ್ಟು ಬೆಲೆಯಾಗುತ್ತದೆ?',
@@ -98,12 +98,13 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       },
       {
         id: 'q-m-4',
-        topicKey: 'area_perimeter',
-        topicLabel: {
-          en: 'Area & Perimeter',
-          kn: 'ವಿಸ್ತೀರ್ಣ ಮತ್ತು ಸುತ್ತಳತೆ',
-          hi: 'क्षेत्रफल और परिमाप',
-        },
+        topicKey: 'geometry',
+        topicLabel: TOPIC_DEFINITIONS.geometry.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.geometry.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.geometry.prerequisiteTopicLabel,
         prompt: {
           en: 'A rectangular classroom plot is 15 m long and 10 m wide. What is its perimeter?',
           kn: '15 ಮೀ ಉದ್ದ ಮತ್ತು 10 ಮೀ ಅಗಲದ ಆಯತಾಕಾರದ ಜಾಗದ ಸುತ್ತಳತೆ ಎಷ್ಟು?',
@@ -120,6 +121,106 @@ export const SAMPLE_QUIZZES: Quiz[] = [
           en: 'Perimeter of a rectangle = 2 × (length + width) = 2 × (15 + 10) = 50 m.',
           kn: 'ಆಯತದ ಸುತ್ತಳತೆ = 2 × (ಉದ್ದ + ಅಗಲ) = 2 × (15 + 10) = 50 ಮೀ.',
           hi: 'आयत का परिमाप = 2 × (लंबाई + चौड़ाई) = 2 × (15 + 10) = 50 मीटर।',
+        },
+      },
+    ],
+  },
+  {
+    id: 'quiz-math-geometry',
+    subjectId: 'math',
+    lessonId: 'math-geometry-03',
+    grade: 7,
+    origin: 'sample',
+    title: {
+      en: 'Geometry: Perimeter, Area & Angles Check',
+      kn: 'ಜ್ಯಾಮಿತಿ: ಸುತ್ತಳತೆ, ವಿಸ್ತೀರ್ಣ ಮತ್ತು ಕೋನಗಳ ಪರೀಕ್ಷೆ',
+      hi: 'ज्यामिति: परिमाप, क्षेत्रफल और कोण अभ्यास',
+    },
+    description: {
+      en: '3 focused Geometry problems on perimeter, triangle area, and polygon measurements.',
+      kn: 'ಸುತ್ತಳತೆ, ತ್ರಿಕೋನ ವಿಸ್ತೀರ್ಣ ಮತ್ತು ಬಹುಭುಜಾಕೃತಿ ಅಳತೆಗಳ 3 ಜ್ಯಾಮಿತಿ ಪ್ರಶ್ನೆಗಳು.',
+      hi: 'परिमाप, त्रिभुज क्षेत्रफल और ज्यामिति माप पर आधारित 3 मुख्य प्रश्न।',
+    },
+    questions: [
+      {
+        id: 'q-g-1',
+        topicKey: 'geometry',
+        topicLabel: TOPIC_DEFINITIONS.geometry.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.geometry.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.geometry.prerequisiteTopicLabel,
+        prompt: {
+          en: 'A rectangular vegetable bed is 12 m long and 7 m wide. What is its area?',
+          kn: '12 ಮೀ ಉದ್ದ ಮತ್ತು 7 ಮೀ ಅಗಲದ ಆಯತಾಕಾರದ ತರಕಾರಿ ತೋಟದ ವಿಸ್ತೀರ್ಣ ಎಷ್ಟು?',
+          hi: '12 मीटर लंबी और 7 मीटर चौड़ी आयताकार क्यारी का क्षेत्रफल क्या है?',
+        },
+        options: [
+          { en: '38 sq m', kn: '38 ಚ.ಮೀ', hi: '38 वर्ग मीटर' },
+          { en: '84 sq m', kn: '84 ಚ.ಮೀ', hi: '84 वर्ग मीटर' },
+          { en: '19 sq m', kn: '19 ಚ.ಮೀ', hi: '19 वर्ग मीटर' },
+          { en: '72 sq m', kn: '72 ಚ.ಮೀ', hi: '72 वर्ग मीटर' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Area of rectangle = 12 m × 7 m = 84 sq m.',
+          kn: 'ಆಯತದ ವಿಸ್ತೀರ್ಣ = 12 × 7 = 84 ಚ.ಮೀ.',
+          hi: 'आयत का क्षेत्रफल = 12 × 7 = 84 वर्ग मीटर।',
+        },
+      },
+      {
+        id: 'q-g-2',
+        topicKey: 'geometry',
+        topicLabel: TOPIC_DEFINITIONS.geometry.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.geometry.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.geometry.prerequisiteTopicLabel,
+        prompt: {
+          en: 'The area of a triangle is 36 sq cm and its base is 9 cm. What is its height?',
+          kn: 'ಒಂದು ತ್ರಿಕೋನದ ವಿಸ್ತೀರ್ಣ 36 ಚ.ಸೆಂ.ಮೀ ಮತ್ತು ಪಾದ 9 ಸೆಂ.ಮೀ ಆದರೆ ಎತ್ತರ ಎಷ್ಟು?',
+          hi: 'एक त्रिभुज का क्षेत्रफल 36 वर्ग सेमी और आधार 9 सेमी है। इसकी ऊँचाई क्या है?',
+        },
+        options: [
+          { en: '4 cm', kn: '4 ಸೆಂ.ಮೀ', hi: '4 सेमी' },
+          { en: '8 cm', kn: '8 ಸೆಂ.ಮೀ', hi: '8 सेमी' },
+          { en: '6 cm', kn: '6 ಸೆಂ.ಮೀ', hi: '6 सेमी' },
+          { en: '18 cm', kn: '18 ಸೆಂ.ಮೀ', hi: '18 सेमी' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Area = (1/2) × base × height → 36 = (1/2) × 9 × h → h = 72 ÷ 9 = 8 cm.',
+          kn: '36 = (1/2) × 9 × ಎತ್ತರ → ಎತ್ತರ = 72 ÷ 9 = 8 ಸೆಂ.ಮೀ.',
+          hi: '36 = (1/2) × 9 × ऊँचाई → ऊँचाई = 72 ÷ 9 = 8 सेमी।',
+        },
+      },
+      {
+        id: 'q-g-3',
+        topicKey: 'geometry',
+        topicLabel: TOPIC_DEFINITIONS.geometry.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.geometry.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.geometry.prerequisiteTopicLabel,
+        prompt: {
+          en: 'What is the perimeter of an equilateral triangle with each side measuring 11 cm?',
+          kn: 'ಪ್ರತಿಯೊಂದು ಬದಿ 11 ಸೆಂ.ಮೀ ಇರುವ ಸಮಬಾಹು ತ್ರಿಕೋನದ ಸುತ್ತಳತೆ ಎಷ್ಟು?',
+          hi: '11 सेमी भुजा वाले समबाहु त्रिभुज का परिमाप क्या होगा?',
+        },
+        options: [
+          { en: '22 cm', kn: '22 ಸೆಂ.ಮೀ', hi: '22 सेमी' },
+          { en: '33 cm', kn: '33 ಸೆಂ.ಮೀ', hi: '33 सेमी' },
+          { en: '44 cm', kn: '44 ಸೆಂ.ಮೀ', hi: '44 सेमी' },
+          { en: '121 cm', kn: '121 ಸೆಂ.ಮೀ', hi: '121 सेमी' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'All 3 sides of an equilateral triangle are equal: 3 × 11 = 33 cm.',
+          kn: 'ಸಮಬಾಹು ತ್ರಿಕೋನದ 3 ಬದಿಗಳು ಸಮ: 3 × 11 = 33 ಸೆಂ.ಮೀ.',
+          hi: 'समबाहु त्रिभुज की तीनों भुजाएँ बराबर होती हैं: 3 × 11 = 33 सेमी।',
         },
       },
     ],
@@ -144,11 +245,12 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-ma-1',
         topicKey: 'linear_equations',
-        topicLabel: {
-          en: 'Linear Equations',
-          kn: 'ರೇಖೀಯ ಸಮೀಕರಣಗಳು',
-          hi: 'रैखिक समीकरण',
-        },
+        topicLabel: TOPIC_DEFINITIONS.linear_equations.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.linear_equations.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.linear_equations.prerequisiteTopicLabel,
         prompt: {
           en: 'Solve for x: 4x + 7 = 31',
           kn: 'x ಮೌಲ್ಯ ಕಂಡುಹಿಡಿಯಿರಿ: 4x + 7 = 31',
@@ -169,12 +271,13 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       },
       {
         id: 'q-ma-2',
-        topicKey: 'area_perimeter',
-        topicLabel: {
-          en: 'Area & Perimeter',
-          kn: 'ವಿಸ್ತೀರ್ಣ ಮತ್ತು ಸುತ್ತಳತೆ',
-          hi: 'क्षेत्रफल और परिमाप',
-        },
+        topicKey: 'geometry',
+        topicLabel: TOPIC_DEFINITIONS.geometry.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.geometry.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.geometry.prerequisiteTopicLabel,
         prompt: {
           en: 'What is the area of a triangle with base 12 cm and height 5 cm?',
           kn: '12 ಸೆಂ.ಮೀ ಪಾದ ಮತ್ತು 5 ಸೆಂ.ಮೀ ಎತ್ತರವಿರುವ ತ್ರಿಕೋನದ ವಿಸ್ತೀರ್ಣ ಎಷ್ಟು?',
@@ -196,11 +299,12 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-ma-3',
         topicKey: 'linear_equations',
-        topicLabel: {
-          en: 'Linear Equations',
-          kn: 'ರೇಖೀಯ ಸಮೀಕರಣಗಳು',
-          hi: 'रैखिक समीकरण',
-        },
+        topicLabel: TOPIC_DEFINITIONS.linear_equations.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.linear_equations.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.linear_equations.prerequisiteTopicLabel,
         prompt: {
           en: 'If 2y - 3 = 11, what is y?',
           kn: '2y - 3 = 11 ಆದರೆ, y ಮೌಲ್ಯ ಎಷ್ಟು?',
@@ -241,11 +345,10 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-s-1',
         topicKey: 'plant_nutrition',
-        topicLabel: {
-          en: 'Plant Nutrition',
-          kn: 'ಸಸ್ಯಗಳಲ್ಲಿ ಪೋಷಣೆ',
-          hi: 'पादपों में पोषण',
-        },
+        topicLabel: TOPIC_DEFINITIONS.plant_nutrition.label,
+        difficulty: 'Easy',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
         prompt: {
           en: 'Which gas do green leaves absorb from air during photosynthesis?',
           kn: 'ದ್ಯುತಿಸಂಶ್ಲೇಷಣೆಯ ಸಮಯದಲ್ಲಿ ಹಸಿರು ಎಲೆಗಳು ಗಾಳಿಯಿಂದ ಯಾವ ಅನಿಲವನ್ನು ಹೀರಿಕೊಳ್ಳುತ್ತವೆ?',
@@ -267,11 +370,10 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-s-2',
         topicKey: 'circuits',
-        topicLabel: {
-          en: 'Electricity & Circuits',
-          kn: 'ವಿದ್ಯುತ್ ಮತ್ತು ಸರ್ಕ್ಯೂಟ್‌ಗಳು',
-          hi: 'विद्युत तथा परिपथ',
-        },
+        topicLabel: TOPIC_DEFINITIONS.circuits.label,
+        difficulty: 'Easy',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
         prompt: {
           en: 'Which material is a good electrical conductor suitable for wiring?',
           kn: 'ವಿದ್ಯುತ್ ತಂತಿಗಳಿಗೆ ಸೂಕ್ತವಾದ ಉತ್ತಮ ವಿದ್ಯುತ್ ವಾಹಕ ಯಾವುದು?',
@@ -293,11 +395,12 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-s-3',
         topicKey: 'water_cycle',
-        topicLabel: {
-          en: 'Water Conservation',
-          kn: 'ನೀರಿನ ಸಂರಕ್ಷಣೆ',
-          hi: 'जल संरक्षण',
-        },
+        topicLabel: TOPIC_DEFINITIONS.water_cycle.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.water_cycle.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.water_cycle.prerequisiteTopicLabel,
         prompt: {
           en: 'Which irrigation method delivers water drop by drop directly to plant roots?',
           kn: 'ಸಸ್ಯಗಳ ಬೇರುಗಳಿಗೆ ಹನಿ ಹನಿಯಾಗಿ ನೇರವಾಗಿ ನೀರು ನೀಡುವ ಪದ್ಧತಿ ಯಾವುದು?',
@@ -319,11 +422,12 @@ export const SAMPLE_QUIZZES: Quiz[] = [
       {
         id: 'q-s-4',
         topicKey: 'soil_acids',
-        topicLabel: {
-          en: 'Acids, Bases & Soil pH',
-          kn: 'ಆಮ್ಲಗಳು, ಪ್ರತ್ಯಾಮ್ಲಗಳು ಮತ್ತು ಮಣ್ಣಿನ pH',
-          hi: 'अम्ल, क्षार और मिट्टी का pH',
-        },
+        topicLabel: TOPIC_DEFINITIONS.soil_acids.label,
+        difficulty: 'Medium',
+        language: 'en',
+        languages: ['en', 'kn', 'hi'],
+        prerequisiteTopicKey: TOPIC_DEFINITIONS.soil_acids.prerequisiteTopicKey,
+        prerequisiteTopicLabel: TOPIC_DEFINITIONS.soil_acids.prerequisiteTopicLabel,
         prompt: {
           en: 'What colour does blue litmus paper turn when dipped in lemon juice?',
           kn: 'ನಿಂಬೆ ರಸದಲ್ಲಿ ಅದ್ದಿದಾಗ ನೀಲಿ ಲಿಟ್ಮಸ್ ಕಾಗದ ಯಾವ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುತ್ತದೆ?',

@@ -229,7 +229,7 @@ export const SettingsView: React.FC = () => {
               <span className="font-mono font-medium text-slate-900">
                 {diagnostics?.engine ?? 'Initializing...'}
               </span>{' '}
-              · Database: <span className="font-mono text-slate-800">pathweave_local_db (v2)</span>
+              · Database: <span className="font-mono text-slate-800">pathweave_local_db (v3)</span>
             </p>
             {diagnostics?.error && (
               <p className="mt-1 text-xs font-medium text-amber-800">{diagnostics.error}</p>
@@ -277,6 +277,12 @@ export const SettingsView: React.FC = () => {
                   <div className="text-xs text-slate-500">Topic Mastery</div>
                   <div className="mt-1 font-mono text-lg font-semibold text-slate-900 tabular-nums">
                     {diagnostics.counts.topicProgress}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs text-slate-500">Adaptive Plans</div>
+                  <div className="mt-1 font-mono text-lg font-semibold text-slate-900 tabular-nums">
+                    {diagnostics.counts.adaptiveRecommendations}
                   </div>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -359,8 +365,8 @@ export const SettingsView: React.FC = () => {
                 </span>
               </p>
               <p>
-                Stage 3 roadmap: Remote cloud synchronization and peer-to-peer packet exchange will
-                consume the pending IndexedDB event queue.
+                Stage 3 offline engine: Deterministic rule-based adaptive recommendations run locally
+                against IndexedDB records without cloud or AI APIs.
               </p>
             </div>
 

@@ -77,6 +77,26 @@ export interface UIMessages {
     createPacket: string;
     stage1SyncNotice: string;
   };
+  adaptive: {
+    sectionTitle: string;
+    sectionSubtitle: string;
+    recommendedTopic: string;
+    recommendedDifficulty: string;
+    suggestedExercise: string;
+    reasonLabel: string;
+    previousAccuracy: string;
+    recentAccuracy: string;
+    improvementLabel: string;
+    prerequisiteRevision: string;
+    revisePrerequisiteBtn: string;
+    startAdaptiveBtn: string;
+    emptyStateTitle: string;
+    emptyStateBody: string;
+    weakTopicBadge: string;
+    difficultyProgression: string;
+    teacherOverviewTitle: string;
+    teacherOverviewSubtitle: string;
+  };
   settings: {
     title: string;
     subtitle: string;
@@ -162,7 +182,30 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       addMaterial: 'Create Local Lesson',
       createPacket: 'Package Learning Packet',
       stage1SyncNotice:
-        'Stage 2 Offline Mode: Downloaded lessons, quizzes, topic progress, and pending synchronization events are persisted locally in IndexedDB. Cloud synchronization to a remote server will be added in Stage 3.',
+        'Stage 3 Offline Mode: Lessons, quizzes, topic mastery, adaptive recommendations, and pending synchronization events are persisted locally in IndexedDB.',
+    },
+    adaptive: {
+      sectionTitle: 'Personalized Adaptive Practice',
+      sectionSubtitle:
+        'Deterministic, offline recommendations computed solely from your saved quiz attempts in IndexedDB.',
+      recommendedTopic: 'Recommended Topic',
+      recommendedDifficulty: 'Recommended Difficulty',
+      suggestedExercise: 'Suggested Exercise',
+      reasonLabel: 'Why this is recommended',
+      previousAccuracy: 'Previous Accuracy',
+      recentAccuracy: 'Latest Accuracy',
+      improvementLabel: 'Change',
+      prerequisiteRevision: 'Prerequisite Revision',
+      revisePrerequisiteBtn: 'Revise Prerequisite',
+      startAdaptiveBtn: 'Start Adaptive Practice',
+      emptyStateTitle: 'Complete a quiz to unlock adaptive practice',
+      emptyStateBody:
+        'No quiz attempts are saved for this student yet. Complete any Mathematics or Science check below so the local engine can analyze topic accuracy and build targeted exercises.',
+      weakTopicBadge: 'Needs focus',
+      difficultyProgression: 'Difficulty Progression',
+      teacherOverviewTitle: 'Adaptive Learning Overview',
+      teacherOverviewSubtitle:
+        'Student-wise weak topics, difficulty progression, prerequisite revision alerts, and multi-attempt improvement computed locally.',
     },
     settings: {
       title: 'Platform Settings',
@@ -247,7 +290,30 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       addMaterial: 'ಹೊಸ ಸ್ಥಳೀಯ ಪಾಠ ರಚಿಸಿ',
       createPacket: 'ಕಲಿಕಾ ಪ್ಯಾಕೆಟ್ ತಯಾರಿಸಿ',
       stage1SyncNotice:
-        'ಹಂತ 2 ಆಫ್‌ಲೈನ್ ಮೋಡ್: ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಪಾಠಗಳು, ರಸಪ್ರಶ್ನೆಗಳು, ವಿಷಯ ಪ್ರಗತಿ ಮತ್ತು ಬಾಕಿಯಿರುವ ಸಿಂಕ್ ಘಟನೆಗಳು IndexedDB ಯಲ್ಲಿ ಉಳಿಯುತ್ತವೆ. ಕ್ಲೌಡ್ ಸಿಂಕ್ ಹಂತ 3ರಲ್ಲಿ ಬರಲಿದೆ.',
+        'ಹಂತ 3 ಆಫ್‌ಲೈನ್ ಮೋಡ್: ಪಾಠಗಳು, ರಸಪ್ರಶ್ನೆಗಳು, ವಿಷಯ ಪ್ರಗತಿ, ಹೊಂದಾಣಿಕೆಯ ಶಿಫಾರಸುಗಳು ಮತ್ತು ಬಾಕಿಯಿರುವ ಸಿಂಕ್ ಘಟನೆಗಳು IndexedDB ಯಲ್ಲಿ ಸ್ಥಳೀಯವಾಗಿ ಉಳಿಯುತ್ತವೆ.',
+    },
+    adaptive: {
+      sectionTitle: 'ವೈಯಕ್ತಿಕ ಹೊಂದಾಣಿಕೆಯ ಅಭ್ಯಾಸ',
+      sectionSubtitle:
+        'IndexedDB ನಲ್ಲಿ ಉಳಿಸಿದ ನಿಮ್ಮ ರಸಪ್ರಶ್ನೆ ಪ್ರಯತ್ನಗಳಿಂದ ಮಾತ್ರ ಲೆಕ್ಕಹಾಕಿದ ಆಫ್‌ಲೈನ್ ಶಿಫಾರಸುಗಳು.',
+      recommendedTopic: 'ಶಿಫಾರಸು ಮಾಡಿದ ವಿಷಯ',
+      recommendedDifficulty: 'ಶಿಫಾರಸು ಮಾಡಿದ ಕಠಿಣತೆ',
+      suggestedExercise: 'ಸೂಚಿಸಿದ ಅಭ್ಯಾಸ',
+      reasonLabel: 'ಶಿಫಾರಸಿನ ಕಾರಣ',
+      previousAccuracy: 'ಹಿಂದಿನ ನಿಖರತೆ',
+      recentAccuracy: 'ಇತ್ತೀಚಿನ ನಿಖರತೆ',
+      improvementLabel: 'ಬದಲಾವಣೆ',
+      prerequisiteRevision: 'ಪೂರ್ವಾಪೇಕ್ಷಿತ ಪುನರಾವರ್ತನೆ',
+      revisePrerequisiteBtn: 'ಪೂರ್ವಾಪೇಕ್ಷಿತ ಪಾಠ ಓದಿ',
+      startAdaptiveBtn: 'ಹೊಂದಾಣಿಕೆಯ ಅಭ್ಯಾಸ ಆರಂಭಿಸಿ',
+      emptyStateTitle: 'ಹೊಂದಾಣಿಕೆಯ ಅಭ್ಯಾಸಕ್ಕಾಗಿ ರಸಪ್ರಶ್ನೆ ಪೂರ್ಣಗೊಳಿಸಿ',
+      emptyStateBody:
+        'ಈ ವಿದ್ಯಾರ್ಥಿಗೆ ಇನ್ನೂ ಯಾವುದೇ ರಸಪ್ರಶ್ನೆ ಪ್ರಯತ್ನಗಳು ದಾಖಲಾಗಿಲ್ಲ. ಸ್ಥಳೀಯ ಎಂಜಿನ್ ನಿಮ್ಮ ನಿಖರತೆಯನ್ನು ವಿಶ್ಲೇಷಿಸಲು ಕೆಳಗಿನ ಯಾವುದೇ ರಸಪ್ರಶ್ನೆ ಪೂರ್ಣಗೊಳಿಸಿ.',
+      weakTopicBadge: 'ಹೆಚ್ಚಿನ ಗಮನ ಅಗತ್ಯ',
+      difficultyProgression: 'ಕಠಿಣತೆಯ ಹಂತಗಳು',
+      teacherOverviewTitle: 'ಹೊಂದಾಣಿಕೆಯ ಕಲಿಕಾ ಸಾರಾಂಶ',
+      teacherOverviewSubtitle:
+        'ವಿದ್ಯಾರ್ಥಿವಾರು ದುರ್ಬಲ ವಿಷಯಗಳು, ಕಠಿಣತೆಯ ಪ್ರಗತಿ, ಪೂರ್ವಾಪೇಕ್ಷಿತ ಪುನರಾವರ್ತನೆ ಮತ್ತು ಬಹು-ಪ್ರಯತ್ನಗಳ ಸುಧಾರಣೆ.',
     },
     settings: {
       title: 'ವೇದಿಕೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
@@ -332,7 +398,30 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       addMaterial: 'नया स्थानीय पाठ बनाएं',
       createPacket: 'शिक्षण पैकेट तैयार करें',
       stage1SyncNotice:
-        'चरण 2 ऑफ़लाइन मोड: डाउनलोड किए गए पाठ, प्रश्नोत्तरी, विषयवार प्रगति और लंबित सिंक घटनाएँ IndexedDB में स्थानीय रूप से सहेजी जाती हैं। क्लाउड सिंक चरण 3 में जोड़ा जाएगा।',
+        'चरण 3 ऑफ़लाइन मोड: पाठ, प्रश्नोत्तरी, विषयवार प्रगति, अनुकूली अनुशंसाएँ और लंबित सिंक घटनाएँ IndexedDB में स्थानीय रूप से सहेजी जाती हैं।',
+    },
+    adaptive: {
+      sectionTitle: 'व्यक्तिगत अनुकूली अभ्यास',
+      sectionSubtitle:
+        'IndexedDB में सहेजे गए आपके वास्तविक प्रश्नोत्तरी प्रयासों से गणना की गई ऑफ़लाइन अनुशंसाएँ।',
+      recommendedTopic: 'अनुशंसित विषय',
+      recommendedDifficulty: 'अनुशंसित कठिनाई',
+      suggestedExercise: 'सुझाया गया अभ्यास',
+      reasonLabel: 'यह क्यों अनुशंसित है',
+      previousAccuracy: 'पिछली सटीकता',
+      recentAccuracy: 'नवीनतम सटीकता',
+      improvementLabel: 'बदलाव',
+      prerequisiteRevision: 'पूर्व-आवश्यक पुनरावृत्ति',
+      revisePrerequisiteBtn: 'पूर्व-आवश्यक पाठ दोहराएँ',
+      startAdaptiveBtn: 'अनुकूली अभ्यास शुरू करें',
+      emptyStateTitle: 'अनुकूली अभ्यास के लिए प्रश्नोत्तरी पूरी करें',
+      emptyStateBody:
+        'इस छात्र के लिए अभी तक कोई प्रश्नोत्तरी प्रयास दर्ज नहीं है। नीचे दी गई कोई भी प्रश्नोत्तरी पूरी करें ताकि स्थानीय इंजन विषयवार सटीकता का विश्लेषण कर सके।',
+      weakTopicBadge: 'ध्यान आवश्यक',
+      difficultyProgression: 'कठिनाई प्रगति',
+      teacherOverviewTitle: 'अनुकूली शिक्षण सारांश',
+      teacherOverviewSubtitle:
+        'छात्र-वार कमजोर विषय, कठिनाई प्रगति, पूर्व-आवश्यक पुनरावृत्ति और कई प्रयासों में सुधार।',
     },
     settings: {
       title: 'प्लेटफ़ॉर्म सेटिंग्स',

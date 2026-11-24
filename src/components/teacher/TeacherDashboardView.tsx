@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, RefreshCcw, Users, Wifi, WifiOff } from 'lucide-react';
+import { ArrowRight, Compass, RefreshCcw, Users, Wifi, WifiOff } from 'lucide-react';
 import { usePathweave } from '../../context/PathweaveContext';
 import { pickLocalized } from '../../modules/i18n/translations';
 import { progressService } from '../../modules/progress/progressService';
@@ -13,20 +13,41 @@ export const TeacherDashboardView: React.FC = () => {
     lessons,
     studentsRoster,
     allQuizAttempts,
+    teacherAdaptiveOverview,
     syncQueue,
     recentActivity,
     network,
     setTeacherTab,
   } = usePathweave();
 
+  const studentScores = studentsRoster.map((student) => {
+    const liveAttempts = allQuizAttempts.filter((a) => a.studentId === student.id);
+    const liveAvg =
+      liveAttempts.length > 0
+        ? Math.round(
+            liveAttempts.reduce((sum, a) => sum + a.percentage, 0) / liveAttempts.length
+          )
+        : null;
+    return {
+      student,
+      liveAttemptsCount: liveAttempts.length,
+      effectiveScore: liveAvg ?? student.averageScore,
+      hasLiveScore: liveAvg !== null,
+    };
+  });
+
+  const scoredStudents = studentScores.filter((s) => s.hasLiveScore || s.student.averageScore > 0);
   const classAverage =
-    studentsRoster.length > 0
+    scoredStudents.length > 0
       ? Math.round(
-          studentsRoster.reduce((sum, s) => sum + s.averageScore, 0) / studentsRoster.length
+          scoredStudents.reduce((sum, s) => sum + s.effectiveScore, 0) / scoredStudents.length
         )
       : 0;
 
   const weakAreas = progressService.computeTopicWeakAreas(studentsRoster, allQuizAttempts);
+  const liveAdaptiveStudents = teacherAdaptiveOverview.studentRows.filter(
+    (r) => r.hasLiveAdaptiveData
+  );
 
   return (
     <div className="space-y-8">
@@ -106,6 +127,87 @@ export const TeacherDashboardView: React.FC = () => {
         </div>
       </section>
 
+      {/* Adaptive Learning Overview (Live IndexedDB Analytics) */}
+      <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <Compass className="h-4 w-4 text-teal-700" aria-hidden="true" />
+              {messages.adaptive.teacherOverviewTitle}
+            </h2>
+            <p className="text-xs text-slate-500">{messages.adaptive.teacherOverviewSubtitle}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTeacherTab('performance')}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800 whitespace-nowrap shrink-0"
+          >
+            Full adaptive report
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {liveAdaptiveStudents.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            No live student quiz attempts saved in IndexedDB yet. Switch to Student Mode and submit
+            a quiz to inspect real-time adaptive weak topics, difficulty progressions, and attempt
+            improvements here.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {liveAdaptiveStudents.map((row) => (
+              <div key={row.studentId} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 space-y-0.5">
+                  <div className="text-sm font-medium text-slate-900">
+                    {row.studentName}{' '}
+                    <span className="font-normal text-xs text-slate-500 tabular-nums">
+                      · Grade {row.grade} · {row.attemptsCount} attempt(s)
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    Weak topics:{' '}
+                    <span className="font-medium text-amber-900">
+                      {row.weakTopics.length > 0 ? row.weakTopics.join(', ') : 'None flagged'}
+                    </span>
+                    {row.recommendedRevisionTopics.length > 0 && (
+                      <>
+                        {' · '}Revise:{' '}
+                        <span className="font-medium text-slate-800">
+                          {row.recommendedRevisionTopics.join(', ')}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-500 font-mono">
+                    {row.difficultyProgressions
+                      .map((dp) => `${dp.topicLabel}: ${dp.progression.join(' → ')}`)
+                      .join(' · ')}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 shrink-0 font-mono text-xs tabular-nums">
+                  {row.latestAccuracyPercent !== null && (
+                    <span className="font-semibold text-slate-900">
+                      Latest: {row.latestAccuracyPercent}%
+                    </span>
+                  )}
+                  {row.overallImprovementDelta !== null && (
+                    <span
+                      className={`font-semibold ${
+                        row.overallImprovementDelta >= 0 ? 'text-emerald-700' : 'text-amber-800'
+                      }`}
+                    >
+                      {row.overallImprovementDelta >= 0 ? '+' : ''}
+                      {row.overallImprovementDelta}% trend
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Student Performance & Topic-wise Weak Areas */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
@@ -114,7 +216,9 @@ export const TeacherDashboardView: React.FC = () => {
               <h2 className="text-base font-semibold text-slate-900">
                 {messages.teacher.performanceOverview}
               </h2>
-              <p className="text-xs text-slate-500">{messages.sampleDataNotice}</p>
+              <p className="text-xs text-slate-500">
+                Live IndexedDB quiz averages merged with sample classroom baselines
+              </p>
             </div>
             <button
               type="button"
@@ -127,16 +231,19 @@ export const TeacherDashboardView: React.FC = () => {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {studentsRoster.slice(0, 5).map((student) => (
+            {studentScores.slice(0, 5).map(({ student, liveAttemptsCount, effectiveScore, hasLiveScore }) => (
               <div key={student.id} className="py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-slate-900">{student.name}</div>
                   <div className="text-xs text-slate-500 tabular-nums">
-                    Grade {student.grade} · {student.lessonsCompleted} lessons completed
+                    Grade {student.grade} ·{' '}
+                    {hasLiveScore
+                      ? `${liveAttemptsCount} live IndexedDB attempt(s)`
+                      : `${student.lessonsCompleted} sample lessons`}
                   </div>
                 </div>
                 <div className="font-mono text-sm font-semibold text-slate-900 tabular-nums">
-                  {student.averageScore > 0 ? `${student.averageScore}%` : 'New'}
+                  {hasLiveScore || student.averageScore > 0 ? `${effectiveScore}%` : 'New'}
                 </div>
               </div>
             ))}

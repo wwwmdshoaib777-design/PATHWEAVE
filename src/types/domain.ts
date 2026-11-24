@@ -52,14 +52,21 @@ export interface Lesson {
   createdAt: string;
 }
 
+export type DifficultyLevel = 'Easy' | 'Medium' | 'Hard';
+
 export interface QuizQuestion {
   id: string;
   topicKey: string;
   topicLabel: LocalizedText;
+  difficulty: DifficultyLevel;
+  language: LanguageCode;
+  languages: LanguageCode[];
   prompt: LocalizedText;
   options: LocalizedText[];
   correctIndex: number;
   explanation: LocalizedText;
+  prerequisiteTopicKey?: string;
+  prerequisiteTopicLabel?: LocalizedText;
 }
 
 export interface StoredQuizQuestion extends QuizQuestion {
@@ -77,6 +84,9 @@ export interface Quiz {
   description: LocalizedText;
   questions: QuizQuestion[];
   origin: DataOrigin;
+  isAdaptiveExercise?: boolean;
+  targetTopicKey?: string;
+  targetDifficulty?: DifficultyLevel;
 }
 
 export interface LessonProgressRecord {
@@ -101,6 +111,14 @@ export interface TopicProgressRecord {
   lastPracticedAt: string;
 }
 
+export interface QuizAttemptTopicResult {
+  questionId?: string;
+  topicKey: string;
+  topicLabel: LocalizedText;
+  difficulty?: DifficultyLevel;
+  correct: boolean;
+}
+
 export interface QuizAttemptRecord {
   id: string;
   quizId: string;
@@ -110,12 +128,97 @@ export interface QuizAttemptRecord {
   totalQuestions: number;
   percentage: number;
   answers: Record<string, number>;
-  topicResults: Array<{
-    topicKey: string;
-    topicLabel: LocalizedText;
-    correct: boolean;
-  }>;
+  topicResults: QuizAttemptTopicResult[];
   submittedAt: string;
+  mode?: 'standard_quiz' | 'adaptive_practice';
+  targetDifficulty?: DifficultyLevel;
+}
+
+export interface TopicAttemptSnapshot {
+  attemptId: string;
+  submittedAt: string;
+  questionsCount: number;
+  correctCount: number;
+  accuracyPercent: number;
+  difficultyUsed: DifficultyLevel;
+}
+
+export interface TopicPerformanceAnalysis {
+  studentId: string;
+  subjectId: SubjectId;
+  topicKey: string;
+  topicLabel: LocalizedText;
+  totalQuestionsAttempted: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  accuracyPercent: number;
+  recentAccuracyPercent: number;
+  previousAccuracyPercent: number | null;
+  improvementDelta: number | null;
+  trend: 'improving' | 'declining' | 'steady' | 'insufficient_data';
+  attemptCount: number;
+  attemptHistory: TopicAttemptSnapshot[];
+  consecutiveMistakes: number;
+  currentDifficulty: DifficultyLevel;
+  difficultyProgression: DifficultyLevel[];
+  lastPracticedAt: string;
+}
+
+export type AdaptiveRuleId =
+  | 'insufficient_evidence_hold'
+  | 'low_accuracy_easier_and_prerequisite'
+  | 'repeated_mistakes_revise'
+  | 'moderate_accuracy_medium'
+  | 'first_high_score_confirm_consistency'
+  | 'consistent_mastery_increase_difficulty'
+  | 'sustained_hard_mastery';
+
+export interface AdaptiveRecommendationRecord {
+  id: string;
+  studentId: string;
+  subjectId: SubjectId;
+  topicKey: string;
+  topicLabel: LocalizedText;
+  recommendedDifficulty: DifficultyLevel;
+  previousDifficulty: DifficultyLevel;
+  difficultyProgression: DifficultyLevel[];
+  isWeakTopic: boolean;
+  needsPrerequisiteRevision: boolean;
+  prerequisiteTopicKey?: string;
+  prerequisiteTopicLabel?: LocalizedText;
+  prerequisiteLessonId?: string;
+  suggestedExerciseTitle: LocalizedText;
+  suggestedQuestionIds: string[];
+  previousAccuracyPercent: number;
+  recentAccuracyPercent: number;
+  improvementDelta: number | null;
+  attemptCount: number;
+  questionsAttempted: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  ruleApplied: AdaptiveRuleId;
+  explanation: LocalizedText;
+  generatedAt: string;
+}
+
+export interface StudentAdaptiveOverviewRow {
+  studentId: string;
+  studentName: string;
+  grade: number;
+  origin: DataOrigin;
+  hasLiveAdaptiveData: boolean;
+  attemptsCount: number;
+  weakTopics: string[];
+  recommendedRevisionTopics: string[];
+  difficultyProgressions: Array<{
+    topicKey: string;
+    topicLabel: string;
+    progression: DifficultyLevel[];
+    currentRecommended: DifficultyLevel;
+  }>;
+  overallImprovementDelta: number | null;
+  latestAccuracyPercent: number | null;
+  sampleBaselineWeakTopics: string[];
 }
 
 export interface DownloadedMaterialRecord {
@@ -164,6 +267,7 @@ export interface SyncQueueItem {
     | 'progress'
     | 'topic_progress'
     | 'quiz_attempt'
+    | 'adaptive_recommendation'
     | 'student'
     | 'material'
     | 'packet';
@@ -184,7 +288,7 @@ export interface ActivityRecord {
   actorName: string;
   description: LocalizedText;
   timestamp: string;
-  category: 'lesson' | 'quiz' | 'download' | 'material' | 'student';
+  category: 'lesson' | 'quiz' | 'adaptive' | 'download' | 'material' | 'student';
 }
 
 export type StudentNavTab =

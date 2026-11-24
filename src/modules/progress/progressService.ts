@@ -7,6 +7,7 @@ import {
   SubjectId,
   TopicProgressRecord,
 } from '../../types/domain';
+import { getTopicDefinition, normalizeTopicKey } from '../adaptive/adaptiveQuestionBank';
 import { createUniqueId, storageService } from '../storage/storageService';
 
 export interface TopicWeakArea {
@@ -49,14 +50,16 @@ class ProgressService {
     >();
 
     for (const item of attempt.topicResults) {
-      const current = grouped.get(item.topicKey) ?? {
-        label: item.topicLabel,
+      const topicKey = normalizeTopicKey(item.topicKey);
+      const def = getTopicDefinition(topicKey);
+      const current = grouped.get(topicKey) ?? {
+        label: def?.label ?? item.topicLabel,
         total: 0,
         correct: 0,
       };
       current.total += 1;
       if (item.correct) current.correct += 1;
-      grouped.set(item.topicKey, current);
+      grouped.set(topicKey, current);
     }
 
     const updatedRecords: TopicProgressRecord[] = [];
@@ -168,15 +171,18 @@ class ProgressService {
 
     for (const student of students) {
       for (const topic of student.weakTopics) {
-        const entry = topicMap.get(topic) ?? { rosterCount: 0, quizTotal: 0, quizCorrect: 0 };
+        const normalizedName = topic === 'Area & Perimeter' ? 'Geometry' : topic;
+        const entry = topicMap.get(normalizedName) ?? { rosterCount: 0, quizTotal: 0, quizCorrect: 0 };
         entry.rosterCount += 1;
-        topicMap.set(topic, entry);
+        topicMap.set(normalizedName, entry);
       }
     }
 
     for (const attempt of attempts) {
       for (const item of attempt.topicResults) {
-        const label = item.topicLabel.en;
+        const normalizedKey = normalizeTopicKey(item.topicKey);
+        const def = getTopicDefinition(normalizedKey);
+        const label = def?.label.en ?? item.topicLabel.en;
         const entry = topicMap.get(label) ?? { rosterCount: 0, quizTotal: 0, quizCorrect: 0 };
         entry.quizTotal += 1;
         if (item.correct) entry.quizCorrect += 1;

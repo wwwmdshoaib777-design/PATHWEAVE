@@ -9,6 +9,7 @@ import {
 const PREF_ROLE_KEY = 'active_role';
 const PREF_LANG_KEY = 'preferred_language';
 const PREF_OFFLINE_TEST_KEY = 'offline_test_mode';
+const PREF_ACTIVE_STUDENT_KEY = 'active_student_id';
 
 export interface CreateStudentInput {
   name: string;
@@ -44,6 +45,27 @@ class RoleService {
     return this.ensureProfilesSeeded();
   }
 
+  async getActiveStudentProfile(studentId: string, fallbackLanguage: LanguageCode): Promise<UserProfile> {
+    const primary = await this.ensureProfilesSeeded();
+    if (studentId === primary.id) {
+      return { ...primary, preferredLanguage: fallbackLanguage };
+    }
+    const roster = await this.getAllStudents();
+    const matched = roster.find((s) => s.id === studentId);
+    if (!matched) {
+      return { ...primary, preferredLanguage: fallbackLanguage };
+    }
+    return {
+      id: matched.id,
+      role: 'student',
+      name: matched.name,
+      schoolName: primary.schoolName,
+      district: primary.district,
+      gradeOrSubject: `Grade ${matched.grade}`,
+      preferredLanguage: fallbackLanguage,
+    };
+  }
+
   async updateStudentPreferredLanguage(language: LanguageCode): Promise<void> {
     const adapter = await storageService.getAdapter();
     const profile = await this.ensureProfilesSeeded();
@@ -57,13 +79,17 @@ class RoleService {
     role: UserRole;
     language: LanguageCode;
     offlineTestMode: boolean;
+    activeStudentId: string;
   }> {
     const adapter = await storageService.getAdapter();
     const role = (await adapter.get<UserRole>('preferences', PREF_ROLE_KEY)) ?? 'student';
     const language = (await adapter.get<LanguageCode>('preferences', PREF_LANG_KEY)) ?? 'en';
     const offlineTestMode =
       (await adapter.get<boolean>('preferences', PREF_OFFLINE_TEST_KEY)) ?? false;
-    return { role, language, offlineTestMode };
+    const activeStudentId =
+      (await adapter.get<string>('preferences', PREF_ACTIVE_STUDENT_KEY)) ??
+      DEMO_STUDENT_PROFILE.id;
+    return { role, language, offlineTestMode, activeStudentId };
   }
 
   async saveRolePreference(role: UserRole): Promise<void> {
@@ -80,6 +106,11 @@ class RoleService {
   async saveOfflineTestMode(enabled: boolean): Promise<void> {
     const adapter = await storageService.getAdapter();
     await adapter.put('preferences', PREF_OFFLINE_TEST_KEY, enabled);
+  }
+
+  async saveActiveStudentId(studentId: string): Promise<void> {
+    const adapter = await storageService.getAdapter();
+    await adapter.put('preferences', PREF_ACTIVE_STUDENT_KEY, studentId);
   }
 
   async getAllStudents(): Promise<StudentRosterRecord[]> {

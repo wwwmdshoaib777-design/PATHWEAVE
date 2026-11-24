@@ -40,6 +40,12 @@ class StorageService {
     return this.initPromise;
   }
 
+  setAdapterForTesting(adapter: StorageAdapter | null): void {
+    this.adapter = adapter;
+    this.initPromise = adapter ? Promise.resolve(adapter) : null;
+    this.lastError = null;
+  }
+
   getLastError(): string | null {
     return this.lastError;
   }
@@ -65,6 +71,7 @@ class StorageService {
     const userMutableStores: StoreName[] = [
       'progress',
       'topicProgress',
+      'adaptiveRecommendations',
       'quizAttempts',
       'downloads',
       'downloadedLessons',

@@ -1,6 +1,7 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   ActivityRecord,
+  AdaptiveRecommendationRecord,
   DownloadedLessonRecord,
   DownloadedMaterialRecord,
   LanguageCode,
@@ -9,16 +10,21 @@ import {
   LessonProgressRecord,
   Quiz,
   QuizAttemptRecord,
+  StoredQuizQuestion,
+  StudentAdaptiveOverviewRow,
   StudentNavTab,
   StudentRosterRecord,
   Subject,
   SubjectId,
   SyncQueueItem,
   TeacherNavTab,
+  TopicPerformanceAnalysis,
   TopicProgressRecord,
   UserProfile,
   UserRole,
 } from '../types/domain';
+import { buildTeacherAdaptiveOverview } from '../modules/adaptive/adaptiveEngine';
+import { adaptiveService } from '../modules/adaptive/adaptiveService';
 import { CreateStudentInput, roleService } from '../modules/auth/roleService';
 import { CreateLocalLessonInput, lessonService } from '../modules/curriculum/lessonService';
 import { NetworkStatusState, useNetworkStatus } from '../modules/network/useNetworkStatus';
@@ -41,24 +47,43 @@ interface StorageDiagnostics {
   error: string | null;
 }
 
+interface TeacherAdaptiveOverviewState {
+  studentRows: StudentAdaptiveOverviewRow[];
+  topicSummaries: Array<{
+    topicKey: string;
+    topicLabel: { en: string; kn: string; hi: string };
+    studentsPracticed: number;
+    weakStudentCount: number;
+    averageRecentAccuracy: number;
+    averageImprovementDelta: number | null;
+    prerequisiteCount: number;
+  }>;
+}
+
 interface PathweaveContextValue {
   ready: boolean;
   role: UserRole;
   language: LanguageCode;
   messages: UIMessages;
   profile: UserProfile;
+  activeStudentId: string;
   studentTab: StudentNavTab;
   teacherTab: TeacherNavTab;
   selectedSubjectFilter: SubjectId | 'all';
   activeLessonId: string | null;
   activeQuizId: string | null;
+  activeAdaptiveQuiz: Quiz | null;
   subjects: Subject[];
   lessons: Lesson[];
   quizzes: Quiz[];
+  allQuestions: StoredQuizQuestion[];
   progressRecords: LessonProgressRecord[];
   topicProgress: TopicProgressRecord[];
   quizAttempts: QuizAttemptRecord[];
   allQuizAttempts: QuizAttemptRecord[];
+  adaptiveRecommendations: AdaptiveRecommendationRecord[];
+  topicAnalyses: TopicPerformanceAnalysis[];
+  teacherAdaptiveOverview: TeacherAdaptiveOverviewState;
   downloadedMaterials: DownloadedMaterialRecord[];
   downloadedLessons: DownloadedLessonRecord[];
   studentsRoster: StudentRosterRecord[];
@@ -79,8 +104,11 @@ interface PathweaveContextValue {
   openLessonReader: (lessonId: string) => Promise<void>;
   closeLessonReader: () => void;
   openQuizRunner: (quizId: string) => void;
+  startAdaptivePractice: (recommendation: AdaptiveRecommendationRecord) => Promise<void>;
+  openPrerequisiteLesson: (lessonId: string) => Promise<void>;
   closeQuizRunner: () => void;
   switchRole: (nextRole: UserRole) => Promise<void>;
+  switchActiveStudent: (studentId: string) => Promise<void>;
   changeLanguage: (nextLang: LanguageCode) => Promise<void>;
   setOfflineTestMode: (enabled: boolean) => Promise<void>;
   toggleDownloadLesson: (lesson: Lesson) => Promise<void>;
@@ -109,14 +137,20 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<SubjectId | 'all'>('all');
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
+  const [activeAdaptiveQuiz, setActiveAdaptiveQuiz] = useState<Quiz | null>(null);
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [allQuestions, setAllQuestions] = useState<StoredQuizQuestion[]>([]);
   const [progressRecords, setProgressRecords] = useState<LessonProgressRecord[]>([]);
   const [topicProgress, setTopicProgress] = useState<TopicProgressRecord[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttemptRecord[]>([]);
   const [allQuizAttempts, setAllQuizAttempts] = useState<QuizAttemptRecord[]>([]);
+  const [adaptiveRecommendations, setAdaptiveRecommendations] = useState<
+    AdaptiveRecommendationRecord[]
+  >([]);
+  const [topicAnalyses, setTopicAnalyses] = useState<TopicPerformanceAnalysis[]>([]);
   const [downloadedMaterials, setDownloadedMaterials] = useState<DownloadedMaterialRecord[]>([]);
   const [downloadedLessons, setDownloadedLessons] = useState<DownloadedLessonRecord[]>([]);
   const [studentsRoster, setStudentsRoster] = useState<StudentRosterRecord[]>([]);
@@ -135,10 +169,13 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       loadedSubjects,
       loadedLessons,
       loadedQuizzes,
+      loadedAllQuestions,
       loadedProgress,
       loadedTopicProgress,
       loadedStudentAttempts,
       loadedAllAttempts,
+      savedAdaptiveRecs,
+      loadedAnalyses,
       loadedDownloads,
       loadedFullDownloads,
       loadedStudents,
@@ -150,10 +187,13 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       lessonService.getSubjects(),
       lessonService.getAllLessons(),
       quizService.getQuizzesFromDb(),
+      quizService.getAllQuestionsFromDb(),
       progressService.getStudentLessonProgress(studentId),
       progressService.getTopicProgressForStudent(studentId),
       quizService.getAttemptsForStudent(studentId),
       quizService.getAllAttempts(),
+      adaptiveService.getSavedRecommendationsForStudent(studentId),
+      adaptiveService.getTopicAnalysesForStudent(studentId),
       lessonService.getDownloadedMaterials(),
       lessonService.getDownloadedLessons(),
       roleService.getAllStudents(),
@@ -163,13 +203,25 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       storageService.getDiagnostics(),
     ]);
 
+    // If attempts exist in IndexedDB without persisted adaptive recommendations yet, recompute once cleanly
+    let finalRecs = savedAdaptiveRecs;
+    let finalAnalyses = loadedAnalyses;
+    if (loadedStudentAttempts.length > 0 && savedAdaptiveRecs.length === 0) {
+      const recomputed = await adaptiveService.recomputeAndSaveForStudent(studentId);
+      finalRecs = recomputed.recommendations;
+      finalAnalyses = recomputed.analyses;
+    }
+
     setSubjects(loadedSubjects);
     setLessons(loadedLessons);
     setQuizzes(loadedQuizzes);
+    setAllQuestions(loadedAllQuestions);
     setProgressRecords(loadedProgress);
     setTopicProgress(loadedTopicProgress);
     setQuizAttempts(loadedStudentAttempts);
     setAllQuizAttempts(loadedAllAttempts);
+    setAdaptiveRecommendations(finalRecs);
+    setTopicAnalyses(finalAnalyses);
     setDownloadedMaterials(loadedDownloads);
     setDownloadedLessons(loadedFullDownloads);
     setStudentsRoster(loadedStudents);
@@ -186,7 +238,11 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const prefs = await roleService.getSavedPreferences();
       if (cancelled) return;
 
-      const seededStudent = await roleService.ensureProfilesSeeded();
+      await roleService.ensureProfilesSeeded();
+      const activeProfile = await roleService.getActiveStudentProfile(
+        prefs.activeStudentId,
+        prefs.language
+      );
       await lessonService.ensureSubjectsSeeded();
       await quizService.ensureQuizzesSeeded();
 
@@ -194,9 +250,9 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setRole(prefs.role);
       setLanguage(prefs.language);
       setOfflineTestModeState(prefs.offlineTestMode);
-      setStudentProfile({ ...seededStudent, preferredLanguage: prefs.language });
+      setStudentProfile(activeProfile);
 
-      await refreshData(seededStudent.id);
+      await refreshData(activeProfile.id);
 
       if (!cancelled) {
         setReady(true);
@@ -219,12 +275,31 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const studentProfileId = activeStudentProfile.id;
   const messages = TRANSLATIONS[language];
 
+  const teacherAdaptiveOverview = useMemo(
+    () => buildTeacherAdaptiveOverview(studentsRoster, allQuizAttempts, allQuestions),
+    [allQuestions, allQuizAttempts, studentsRoster]
+  );
+
   const switchRole = useCallback(async (nextRole: UserRole) => {
     setRole(nextRole);
     setActiveLessonId(null);
     setActiveQuizId(null);
+    setActiveAdaptiveQuiz(null);
     await roleService.saveRolePreference(nextRole);
   }, []);
+
+  const switchActiveStudent = useCallback(
+    async (nextStudentId: string) => {
+      await roleService.saveActiveStudentId(nextStudentId);
+      const nextProfile = await roleService.getActiveStudentProfile(nextStudentId, language);
+      setStudentProfile(nextProfile);
+      setActiveLessonId(null);
+      setActiveQuizId(null);
+      setActiveAdaptiveQuiz(null);
+      await refreshData(nextProfile.id);
+    },
+    [language, refreshData]
+  );
 
   const changeLanguage = useCallback(async (nextLang: LanguageCode) => {
     setLanguage(nextLang);
@@ -251,7 +326,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (lesson) {
         await progressService.logActivity({
           actorRole: 'student',
-          actorName: roleService.getProfileForRole('student', language).name,
+          actorName: activeStudentProfile.name,
           category: 'lesson',
           description: {
             en: `Opened lesson: ${lesson.title.en}`,
@@ -269,7 +344,14 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       await refreshData(studentProfileId);
     },
-    [downloadedMaterials, language, network.isOnline, refreshData, studentProfileId]
+    [activeStudentProfile.name, downloadedMaterials, network.isOnline, refreshData, studentProfileId]
+  );
+
+  const openPrerequisiteLesson = useCallback(
+    async (lessonId: string) => {
+      await openLessonReader(lessonId);
+    },
+    [openLessonReader]
   );
 
   const closeLessonReader = useCallback(() => {
@@ -277,12 +359,24 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const openQuizRunner = useCallback((quizId: string) => {
+    setActiveAdaptiveQuiz(null);
     setActiveQuizId(quizId);
     setStudentTab('practice');
   }, []);
 
+  const startAdaptivePractice = useCallback(
+    async (recommendation: AdaptiveRecommendationRecord) => {
+      const exerciseQuiz = await adaptiveService.createAdaptiveQuizFromRecommendation(recommendation);
+      setActiveQuizId(null);
+      setActiveAdaptiveQuiz(exerciseQuiz);
+      setStudentTab('practice');
+    },
+    []
+  );
+
   const closeQuizRunner = useCallback(() => {
     setActiveQuizId(null);
+    setActiveAdaptiveQuiz(null);
   }, []);
 
   const toggleDownloadLesson = useCallback(
@@ -316,7 +410,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const record = await progressService.markLessonCompleted(studentProfileId, lesson.id);
       await progressService.logActivity({
         actorRole: 'student',
-        actorName: roleService.getProfileForRole('student', language).name,
+        actorName: activeStudentProfile.name,
         category: 'lesson',
         description: {
           en: `Completed lesson: ${lesson.title.en}`,
@@ -333,18 +427,19 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
       await refreshData(studentProfileId);
     },
-    [language, refreshData, studentProfileId]
+    [activeStudentProfile.name, refreshData, studentProfileId]
   );
 
   const submitQuiz = useCallback(
     async (quiz: Quiz, answers: Record<string, number>) => {
       const attempt = await quizService.submitQuizAttempt(quiz, studentProfileId, answers);
       const updatedTopics = await progressService.updateTopicProgressFromAttempt(attempt);
+      const { recommendations } = await adaptiveService.recomputeAndSaveForStudent(studentProfileId);
 
       await progressService.logActivity({
         actorRole: 'student',
-        actorName: roleService.getProfileForRole('student', language).name,
-        category: 'quiz',
+        actorName: activeStudentProfile.name,
+        category: quiz.isAdaptiveExercise ? 'adaptive' : 'quiz',
         description: {
           en: `Scored ${attempt.score}/${attempt.totalQuestions} (${attempt.percentage}%) on ${quiz.title.en}`,
           kn: `${quiz.title.kn} ರಸಪ್ರಶ್ನೆಯಲ್ಲಿ ${attempt.score}/${attempt.totalQuestions} (${attempt.percentage}%) ಅಂಕ`,
@@ -370,10 +465,22 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         });
       }
 
+      for (const rec of recommendations) {
+        if (updatedTopics.some((t) => t.topicKey === rec.topicKey)) {
+          await syncService.enqueueLocalMutation({
+            entityType: 'adaptive_recommendation',
+            entityId: rec.id,
+            action: 'update',
+            summary: `Adaptive plan updated (${rec.topicLabel.en}: ${rec.recommendedDifficulty})`,
+            payload: rec,
+          });
+        }
+      }
+
       await refreshData(studentProfileId);
       return attempt;
     },
-    [language, refreshData, studentProfileId]
+    [activeStudentProfile.name, refreshData, studentProfileId]
   );
 
   const attemptSync = useCallback(async () => {
@@ -478,6 +585,9 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     await storageService.resetUserLearningData();
     await roleService.saveRolePreference(role);
     await roleService.saveLanguagePreference(language);
+    await roleService.saveActiveStudentId(studentProfileId);
+    setActiveAdaptiveQuiz(null);
+    setActiveQuizId(null);
     setLastSyncResult(null);
     await refreshData(studentProfileId);
   }, [language, refreshData, role, studentProfileId]);
@@ -490,18 +600,24 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         language,
         messages,
         profile,
+        activeStudentId: studentProfileId,
         studentTab,
         teacherTab,
         selectedSubjectFilter,
         activeLessonId,
         activeQuizId,
+        activeAdaptiveQuiz,
         subjects,
         lessons,
         quizzes,
+        allQuestions,
         progressRecords,
         topicProgress,
         quizAttempts,
         allQuizAttempts,
+        adaptiveRecommendations,
+        topicAnalyses,
+        teacherAdaptiveOverview,
         downloadedMaterials,
         downloadedLessons,
         studentsRoster,
@@ -522,8 +638,11 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         openLessonReader,
         closeLessonReader,
         openQuizRunner,
+        startAdaptivePractice,
+        openPrerequisiteLesson,
         closeQuizRunner,
         switchRole,
+        switchActiveStudent,
         changeLanguage,
         setOfflineTestMode,
         toggleDownloadLesson,
