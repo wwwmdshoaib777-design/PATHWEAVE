@@ -4,6 +4,8 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  Download,
+  FlaskConical,
   FolderKanban,
   GraduationCap,
   LayoutDashboard,
@@ -38,10 +40,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     studentTab,
     teacherTab,
     network,
+    offlineTestMode,
+    syncQueue,
+    swStatus,
+    applySwUpdate,
+    dismissSwUpdate,
+    pwaInstall,
     setStudentTab,
     setTeacherTab,
     switchRole,
     changeLanguage,
+    setOfflineTestMode,
   } = usePathweave();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,6 +94,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
     setMobileMenuOpen(false);
   };
+
+  const networkLabel =
+    network.mode === 'offline_simulated'
+      ? messages.simulatedOffline
+      : network.mode === 'offline_disconnected'
+        ? `${messages.offline} (No Network)`
+        : network.mode === 'offline_unreachable'
+          ? `${messages.offline} (Server Unreachable)`
+          : messages.online;
 
   const renderSidebarContent = () => (
     <div className="flex h-full flex-col justify-between bg-white">
@@ -133,19 +151,37 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </nav>
       </div>
 
-      <div className="border-t border-slate-200 p-4 space-y-3">
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          {network.isOnline ? (
-            <Wifi className="h-4 w-4 text-teal-700 shrink-0" aria-hidden="true" />
-          ) : (
-            <WifiOff className="h-4 w-4 text-amber-700 shrink-0" aria-hidden="true" />
-          )}
-          <span className="font-medium text-slate-800">
-            {network.isOnline ? messages.online : messages.offline}
-          </span>
-          <span aria-hidden="true">·</span>
-          <span className="truncate text-slate-500">{messages.localSavedNotice}</span>
+      <div className="border-t border-slate-200 p-4 space-y-2.5">
+        <div className="space-y-1 text-xs text-slate-600">
+          <div className="flex items-center gap-2">
+            {network.mode === 'offline_simulated' ? (
+              <FlaskConical className="h-4 w-4 text-amber-700 shrink-0" aria-hidden="true" />
+            ) : network.isOnline ? (
+              <Wifi className="h-4 w-4 text-teal-700 shrink-0" aria-hidden="true" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-amber-700 shrink-0" aria-hidden="true" />
+            )}
+            <span className="font-semibold text-slate-800 truncate">{networkLabel}</span>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>{messages.pendingSync}</span>
+            <span className="font-mono font-semibold text-slate-800 tabular-nums">
+              {syncQueue.length}
+            </span>
+          </div>
         </div>
+
+        {!pwaInstall.isInstalled && pwaInstall.isInstallable && (
+          <button
+            type="button"
+            onClick={() => pwaInstall.install()}
+            className="flex min-h-[40px] w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 transition-colors whitespace-nowrap"
+          >
+            <Download className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>{messages.settings.installApp}</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -192,7 +228,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top Bar (compact on mobile <= 64px, clean 3-zone layout) */}
+        {/* Top Bar */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -216,7 +252,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
                 <span>{role === 'student' ? messages.studentPortal : messages.teacherPortal}</span>
                 <span aria-hidden="true">·</span>
-                <span>{profile.schoolName}</span>
+                <span>{networkLabel}</span>
+                {syncQueue.length > 0 && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span className="font-medium text-amber-800 tabular-nums">
+                      {messages.pendingSync}: {syncQueue.length}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -262,10 +306,66 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Mobile Offline Banner (non-sticky so sticky cap stays <= 15%) */}
-        {!network.isOnline && (
-          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-900 sm:px-6">
-            {messages.offline} — Viewing local IndexedDB storage and cached sample curriculum.
+        {/* Safe Service Worker Update Banner */}
+        {swStatus.needRefresh && (
+          <div className="border-b border-teal-200 bg-teal-50 px-4 py-2.5 text-xs text-teal-950 sm:px-6 flex flex-wrap items-center justify-between gap-3">
+            <span className="font-medium">
+              A new cached version of PATHWEAVE is ready. Update safely when you are not mid-quiz.
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={applySwUpdate}
+                className="min-h-[34px] rounded-md bg-teal-700 px-3 py-1 font-semibold text-white hover:bg-teal-800"
+              >
+                Update Now
+              </button>
+              <button
+                type="button"
+                onClick={dismissSwUpdate}
+                className="min-h-[34px] rounded-md border border-teal-300 bg-white px-3 py-1 font-medium text-teal-900 hover:bg-teal-100"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Distinct Connectivity Banners: Simulated Offline Test Mode vs Real Network Disconnection */}
+        {offlineTestMode && (
+          <div className="border-b border-amber-300 bg-amber-50 px-4 py-2.5 text-xs text-amber-950 sm:px-6 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 font-medium">
+              <FlaskConical className="h-4 w-4 text-amber-800 shrink-0" aria-hidden="true" />
+              <span>
+                {messages.simulatedOffline} — Actual browser network is{' '}
+                {network.browserOnline ? 'connected' : 'disconnected'}. Testing offline IndexedDB
+                lessons, quizzes, and pending sync queue ({syncQueue.length} queued).
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOfflineTestMode(false)}
+              className="min-h-[32px] rounded-md border border-amber-400 bg-white px-3 py-1 font-semibold text-amber-950 hover:bg-amber-100 whitespace-nowrap"
+            >
+              Exit Test Mode
+            </button>
+          </div>
+        )}
+
+        {!offlineTestMode && !network.isOnline && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-medium text-amber-950 sm:px-6 flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {network.mode === 'offline_unreachable'
+                ? 'Offline (Server Unreachable) — Browser reports connection, but server ping failed. Running from IndexedDB & cached assets.'
+                : 'Offline (Network Disconnected) — Running from cached app shell & IndexedDB local storage.'}
+            </span>
+            <button
+              type="button"
+              onClick={() => network.verifyConnectivity()}
+              className="min-h-[32px] rounded-md border border-amber-300 bg-white px-3 py-1 font-semibold text-amber-950 hover:bg-amber-100 whitespace-nowrap"
+            >
+              {network.checkingReachability ? 'Checking...' : 'Check Connection'}
+            </button>
           </div>
         )}
 

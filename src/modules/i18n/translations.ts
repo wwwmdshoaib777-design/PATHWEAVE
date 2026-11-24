@@ -12,6 +12,8 @@ export interface UIMessages {
   switchToStudent: string;
   online: string;
   offline: string;
+  pendingSync: string;
+  simulatedOffline: string;
   languageLabel: string;
   sampleDataNotice: string;
   localSavedNotice: string;
@@ -96,6 +98,8 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
     switchToStudent: 'Switch to Student Mode',
     online: 'Online',
     offline: 'Offline',
+    pendingSync: 'Pending synchronization',
+    simulatedOffline: 'Simulated Offline (Test Mode)',
     languageLabel: 'Language',
     sampleDataNotice: 'Sample Curriculum Data',
     localSavedNotice: 'Saved Locally (IndexedDB)',
@@ -158,7 +162,7 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       addMaterial: 'Create Local Lesson',
       createPacket: 'Package Learning Packet',
       stage1SyncNotice:
-        'Stage 1 Foundation: Local edits and packets are stored in this browser using IndexedDB. Peer-to-peer Wi-Fi Direct / WebRTC transfer and cloud synchronization are reserved for Stage 2.',
+        'Stage 2 Offline Mode: Downloaded lessons, quizzes, topic progress, and pending synchronization events are persisted locally in IndexedDB. Cloud synchronization to a remote server will be added in Stage 3.',
     },
     settings: {
       title: 'Platform Settings',
@@ -179,6 +183,8 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
     switchToStudent: 'ವಿದ್ಯಾರ್ಥಿ ಮೋಡ್‌ಗೆ ಬದಲಿಸಿ',
     online: 'ಆನ್‌ಲೈನ್',
     offline: 'ಆಫ್‌ಲೈನ್',
+    pendingSync: 'ಸಿಂಕ್ ಬಾಕಿಯಿದೆ',
+    simulatedOffline: 'ಅಣಕು ಆಫ್‌ಲೈನ್ (ಪರೀಕ್ಷಾ ಮೋಡ್)',
     languageLabel: 'ಭಾಷೆ',
     sampleDataNotice: 'ಮಾದರಿ ಪಠ್ಯಕ್ರಮ ದತ್ತಾಂಶ',
     localSavedNotice: 'ಸ್ಥಳೀಯವಾಗಿ ಉಳಿಸಲಾಗಿದೆ (IndexedDB)',
@@ -241,7 +247,7 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       addMaterial: 'ಹೊಸ ಸ್ಥಳೀಯ ಪಾಠ ರಚಿಸಿ',
       createPacket: 'ಕಲಿಕಾ ಪ್ಯಾಕೆಟ್ ತಯಾರಿಸಿ',
       stage1SyncNotice:
-        'ಹಂತ 1 ಅಡಿಪಾಯ: ಸ್ಥಳೀಯ ಬದಲಾವಣೆಗಳು ಮತ್ತು ಪ್ಯಾಕೆಟ್‌ಗಳು IndexedDB ಮೂಲಕ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಉಳಿಯುತ್ತವೆ. ಪೀರ್-ಟು-ಪೀರ್ ಮತ್ತು ಕ್ಲೌಡ್ ಸಿಂಕ್ ಹಂತ 2ರಲ್ಲಿ ಬರಲಿವೆ.',
+        'ಹಂತ 2 ಆಫ್‌ಲೈನ್ ಮೋಡ್: ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಪಾಠಗಳು, ರಸಪ್ರಶ್ನೆಗಳು, ವಿಷಯ ಪ್ರಗತಿ ಮತ್ತು ಬಾಕಿಯಿರುವ ಸಿಂಕ್ ಘಟನೆಗಳು IndexedDB ಯಲ್ಲಿ ಉಳಿಯುತ್ತವೆ. ಕ್ಲೌಡ್ ಸಿಂಕ್ ಹಂತ 3ರಲ್ಲಿ ಬರಲಿದೆ.',
     },
     settings: {
       title: 'ವೇದಿಕೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
@@ -262,6 +268,8 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
     switchToStudent: 'छात्र मोड पर स्विच करें',
     online: 'ऑनलाइन',
     offline: 'ऑफ़लाइन',
+    pendingSync: 'सिंक लंबित',
+    simulatedOffline: 'सिम्युलेटेड ऑफ़लाइन (परीक्षण मोड)',
     languageLabel: 'भाषा',
     sampleDataNotice: 'नमूना पाठ्यक्रम डेटा',
     localSavedNotice: 'स्थानीय रूप से सहेजा गया (IndexedDB)',
@@ -324,7 +332,7 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       addMaterial: 'नया स्थानीय पाठ बनाएं',
       createPacket: 'शिक्षण पैकेट तैयार करें',
       stage1SyncNotice:
-        'चरण 1 आधार: स्थानीय संपादन और पैकेट IndexedDB के माध्यम से इस ब्राउज़र में संग्रहीत हैं। पीयर-टू-पीयर और क्लाउड सिंक चरण 2 में जोड़े जाएंगे।',
+        'चरण 2 ऑफ़लाइन मोड: डाउनलोड किए गए पाठ, प्रश्नोत्तरी, विषयवार प्रगति और लंबित सिंक घटनाएँ IndexedDB में स्थानीय रूप से सहेजी जाती हैं। क्लाउड सिंक चरण 3 में जोड़ा जाएगा।',
     },
     settings: {
       title: 'प्लेटफ़ॉर्म सेटिंग्स',

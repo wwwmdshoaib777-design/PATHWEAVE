@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { registerSW } from 'virtual:pwa-register';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -8,31 +9,86 @@ interface BeforeInstallPromptEvent extends Event {
 export interface ServiceWorkerStatus {
   supported: boolean;
   registered: boolean;
+  offlineReady: boolean;
+  needRefresh: boolean;
   scope: string | null;
   error: string | null;
 }
 
-export async function registerPathweaveServiceWorker(): Promise<ServiceWorkerStatus> {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-    return { supported: false, registered: false, scope: null, error: null };
-  }
+export function useServiceWorkerManager() {
+  const [status, setStatus] = useState<ServiceWorkerStatus>({
+    supported: typeof window !== 'undefined' && 'serviceWorker' in navigator,
+    registered: false,
+    offlineReady: false,
+    needRefresh: false,
+    scope: null,
+    error: null,
+  });
+  const [updateRunner, setUpdateRunner] = useState<((reloadPage?: boolean) => Promise<void>) | null>(
+    null
+  );
 
-  try {
-    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-    return {
-      supported: true,
-      registered: true,
-      scope: registration.scope,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      supported: true,
-      registered: false,
-      scope: null,
-      error: err instanceof Error ? err.message : 'Registration deferred',
-    };
-  }
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return;
+    }
+
+    const updateSW = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        setStatus((prev) => ({ ...prev, needRefresh: true }));
+      },
+      onOfflineReady() {
+        setStatus((prev) => ({ ...prev, offlineReady: true, registered: true }));
+      },
+      onRegisteredSW(_swUrl, registration) {
+        setStatus((prev) => ({
+          ...prev,
+          registered: true,
+          scope: registration?.scope ?? '/',
+          error: null,
+        }));
+      },
+      onRegisterError(error) {
+        setStatus((prev) => ({
+          ...prev,
+          registered: false,
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      },
+    });
+
+    setUpdateRunner(() => updateSW);
+
+    navigator.serviceWorker.ready
+      .then((reg) => {
+        setStatus((prev) => ({
+          ...prev,
+          registered: true,
+          offlineReady: true,
+          scope: reg.scope ?? '/',
+        }));
+      })
+      .catch(() => {
+        // Handled via onRegisterError if registration failed
+      });
+  }, []);
+
+  const applyUpdate = useCallback(async () => {
+    if (updateRunner) {
+      await updateRunner(true);
+    }
+  }, [updateRunner]);
+
+  const dismissUpdate = useCallback(() => {
+    setStatus((prev) => ({ ...prev, needRefresh: false }));
+  }, []);
+
+  return {
+    status,
+    applyUpdate,
+    dismissUpdate,
+  };
 }
 
 export function usePWAInstall() {

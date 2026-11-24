@@ -10,6 +10,7 @@ export const StudentProgressView: React.FC = () => {
     lessons,
     quizzes,
     progressRecords,
+    topicProgress,
     quizAttempts,
     openLessonReader,
     openQuizRunner,
@@ -24,7 +25,8 @@ export const StudentProgressView: React.FC = () => {
           {messages.student.learningProgress}
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          Your saved lesson completions and quiz attempt records in local IndexedDB storage.
+          Your saved lesson completions, topic-wise mastery, and quiz attempt records in local
+          IndexedDB storage.
         </p>
       </div>
 
@@ -55,6 +57,55 @@ export const StudentProgressView: React.FC = () => {
             </div>
           </div>
         ))}
+      </section>
+
+      {/* Topic-Wise Learning Progress (IndexedDB topicProgress store) */}
+      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <div className="border-b border-slate-200 px-5 py-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-slate-900">Topic-Wise Learning Progress</h3>
+          <span className="text-xs text-slate-500">IndexedDB · topicProgress</span>
+        </div>
+
+        {topicProgress.length === 0 ? (
+          <div className="p-6 text-sm text-slate-600">
+            Complete a practice quiz (online or offline) to calculate topic-wise mastery.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                <tr>
+                  <th className="px-5 py-3">Topic</th>
+                  <th className="px-5 py-3">Subject</th>
+                  <th className="px-5 py-3">Correct / Answered</th>
+                  <th className="px-5 py-3">Accuracy</th>
+                  <th className="px-5 py-3">Last Practiced</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {topicProgress.map((tp) => (
+                  <tr key={tp.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-3 font-medium text-slate-900">
+                      {pickLocalized(tp.topicLabel, language)}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                      {tp.subjectId === 'math' ? 'Mathematics' : 'Science'}
+                    </td>
+                    <td className="px-5 py-3 font-mono text-slate-700 tabular-nums">
+                      {tp.correctCount} / {tp.questionsAnswered}
+                    </td>
+                    <td className="px-5 py-3 font-mono font-semibold text-teal-800 tabular-nums">
+                      {tp.accuracyPercent}%
+                    </td>
+                    <td className="px-5 py-3 font-mono text-xs text-slate-500 tabular-nums whitespace-nowrap">
+                      {new Date(tp.lastPracticedAt).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* Lesson Status Table */}
@@ -127,6 +178,7 @@ export const StudentProgressView: React.FC = () => {
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                 <tr>
                   <th className="px-5 py-3">Quiz</th>
+                  <th className="px-5 py-3">Attempt ID</th>
                   <th className="px-5 py-3">Score</th>
                   <th className="px-5 py-3">Percentage</th>
                   <th className="px-5 py-3">Submitted</th>
@@ -140,6 +192,9 @@ export const StudentProgressView: React.FC = () => {
                     <tr key={attempt.id} className="hover:bg-slate-50">
                       <td className="px-5 py-3 font-medium text-slate-900">
                         {quiz ? pickLocalized(quiz.title, language) : attempt.quizId}
+                      </td>
+                      <td className="px-5 py-3 font-mono text-xs text-slate-500">
+                        {attempt.id.slice(0, 18)}
                       </td>
                       <td className="px-5 py-3 font-mono text-slate-700 tabular-nums">
                         {attempt.score} / {attempt.totalQuestions}

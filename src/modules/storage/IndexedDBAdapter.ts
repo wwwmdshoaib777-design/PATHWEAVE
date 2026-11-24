@@ -1,7 +1,7 @@
 import { ALL_STORES, StorageAdapter, StoreName } from './StorageAdapter';
 
 const DB_NAME = 'pathweave_local_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 interface StoredEnvelope<T> {
   id: string;
@@ -34,12 +34,23 @@ export class IndexedDBAdapter implements StorageAdapter {
         }
       };
 
+      request.onblocked = () => {
+        reject(new Error('IndexedDB upgrade blocked by another open tab.'));
+      };
+
       request.onsuccess = () => {
-        this.db = request.result;
+        const database = request.result;
+        database.onversionchange = () => {
+          database.close();
+          this.db = null;
+          this.initPromise = null;
+        };
+        this.db = database;
         resolve();
       };
 
       request.onerror = () => {
+        this.initPromise = null;
         reject(request.error ?? new Error('Failed to open IndexedDB.'));
       };
     });
@@ -64,7 +75,8 @@ export class IndexedDBAdapter implements StorageAdapter {
         const result = req.result as StoredEnvelope<T> | undefined;
         resolve(result ? result.payload : undefined);
       };
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error ?? new Error(`Failed reading ${key} from ${store}`));
+      tx.onabort = () => reject(tx.error ?? new Error(`Transaction aborted reading ${store}`));
     });
   }
 
@@ -77,7 +89,8 @@ export class IndexedDBAdapter implements StorageAdapter {
         const rows = (req.result as StoredEnvelope<T>[]) ?? [];
         resolve(rows.map((row) => row.payload));
       };
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error ?? new Error(`Failed listing ${store}`));
+      tx.onabort = () => reject(tx.error ?? new Error(`Transaction aborted listing ${store}`));
     });
   }
 
@@ -87,8 +100,9 @@ export class IndexedDBAdapter implements StorageAdapter {
       const tx = db.transaction(store, 'readwrite');
       const envelope: StoredEnvelope<T> = { id: key, payload: value };
       const req = tx.objectStore(store).put(envelope);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      req.onerror = () => reject(req.error ?? new Error(`Failed writing ${key} to ${store}`));
+      tx.onabort = () => reject(tx.error ?? new Error(`Transaction aborted writing ${store}`));
     });
   }
 
@@ -97,8 +111,9 @@ export class IndexedDBAdapter implements StorageAdapter {
     return new Promise<void>((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite');
       const req = tx.objectStore(store).delete(key);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      req.onerror = () => reject(req.error ?? new Error(`Failed deleting ${key} from ${store}`));
+      tx.onabort = () => reject(tx.error ?? new Error(`Transaction aborted deleting ${store}`));
     });
   }
 
@@ -107,8 +122,9 @@ export class IndexedDBAdapter implements StorageAdapter {
     return new Promise<void>((resolve, reject) => {
       const tx = db.transaction(store, 'readwrite');
       const req = tx.objectStore(store).clear();
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      req.onerror = () => reject(req.error ?? new Error(`Failed clearing ${store}`));
+      tx.onabort = () => reject(tx.error ?? new Error(`Transaction aborted clearing ${store}`));
     });
   }
 
@@ -118,7 +134,8 @@ export class IndexedDBAdapter implements StorageAdapter {
       const tx = db.transaction(store, 'readonly');
       const req = tx.objectStore(store).count();
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      req.onerror = () => reject(req.error ?? new Error(`Failed counting ${store}`));
+      tx.onabort = () => reject(tx.error ?? new Error(`Transaction aborted counting ${store}`));
     });
   }
 }

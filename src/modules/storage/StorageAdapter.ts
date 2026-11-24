@@ -1,4 +1,10 @@
 export type StoreName =
+  | 'studentProfiles'
+  | 'subjects'
+  | 'downloadedLessons'
+  | 'quizzes'
+  | 'quizQuestions'
+  | 'topicProgress'
   | 'progress'
   | 'quizAttempts'
   | 'downloads'
@@ -10,6 +16,12 @@ export type StoreName =
   | 'packets';
 
 export const ALL_STORES: StoreName[] = [
+  'studentProfiles',
+  'subjects',
+  'downloadedLessons',
+  'quizzes',
+  'quizQuestions',
+  'topicProgress',
   'progress',
   'quizAttempts',
   'downloads',

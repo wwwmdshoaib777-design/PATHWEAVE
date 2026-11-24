@@ -5,8 +5,9 @@ import {
   QuizAttemptRecord,
   StudentRosterRecord,
   SubjectId,
+  TopicProgressRecord,
 } from '../../types/domain';
-import { storageService } from '../storage/storageService';
+import { createUniqueId, storageService } from '../storage/storageService';
 
 export interface TopicWeakArea {
   topicName: string;
@@ -28,6 +29,63 @@ class ProgressService {
     const adapter = await storageService.getAdapter();
     const all = await adapter.getAll<LessonProgressRecord>('progress');
     return all.filter((p) => p.studentId === studentId);
+  }
+
+  async getTopicProgressForStudent(studentId: string): Promise<TopicProgressRecord[]> {
+    const adapter = await storageService.getAdapter();
+    const all = await adapter.getAll<TopicProgressRecord>('topicProgress');
+    return all
+      .filter((t) => t.studentId === studentId)
+      .sort((a, b) => a.accuracyPercent - b.accuracyPercent);
+  }
+
+  async updateTopicProgressFromAttempt(
+    attempt: QuizAttemptRecord
+  ): Promise<TopicProgressRecord[]> {
+    const adapter = await storageService.getAdapter();
+    const grouped = new Map<
+      string,
+      { label: QuizAttemptRecord['topicResults'][number]['topicLabel']; total: number; correct: number }
+    >();
+
+    for (const item of attempt.topicResults) {
+      const current = grouped.get(item.topicKey) ?? {
+        label: item.topicLabel,
+        total: 0,
+        correct: 0,
+      };
+      current.total += 1;
+      if (item.correct) current.correct += 1;
+      grouped.set(item.topicKey, current);
+    }
+
+    const updatedRecords: TopicProgressRecord[] = [];
+    for (const [topicKey, delta] of grouped.entries()) {
+      const id = `${attempt.studentId}::${topicKey}`;
+      const existing = await adapter.get<TopicProgressRecord>('topicProgress', id);
+      const questionsAnswered = (existing?.questionsAnswered ?? 0) + delta.total;
+      const correctCount = (existing?.correctCount ?? 0) + delta.correct;
+      const accuracyPercent =
+        questionsAnswered > 0 ? Math.round((correctCount / questionsAnswered) * 100) : 0;
+
+      const updated: TopicProgressRecord = {
+        id,
+        studentId: attempt.studentId,
+        subjectId: attempt.subjectId,
+        topicKey,
+        topicLabel: delta.label,
+        attemptsCount: (existing?.attemptsCount ?? 0) + 1,
+        questionsAnswered,
+        correctCount,
+        accuracyPercent,
+        lastPracticedAt: attempt.submittedAt,
+      };
+
+      await adapter.put('topicProgress', id, updated);
+      updatedRecords.push(updated);
+    }
+
+    return updatedRecords;
   }
 
   async markLessonViewed(studentId: string, lessonId: string): Promise<LessonProgressRecord> {
@@ -150,7 +208,7 @@ class ProgressService {
     const adapter = await storageService.getAdapter();
     const item: ActivityRecord = {
       ...record,
-      id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: createUniqueId('act'),
       timestamp: new Date().toISOString(),
     };
     await adapter.put('activity', item.id, item);

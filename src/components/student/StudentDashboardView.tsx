@@ -25,6 +25,7 @@ export const StudentDashboardView: React.FC = () => {
     progressRecords,
     quizAttempts,
     downloadedMaterials,
+    syncQueue,
     recentActivity,
     network,
     setStudentTab,
@@ -70,8 +71,20 @@ export const StudentDashboardView: React.FC = () => {
                 ) : (
                   <WifiOff className="h-3.5 w-3.5 text-amber-700" aria-hidden="true" />
                 )}
-                {network.isOnline ? messages.online : messages.offline}
+                {network.mode === 'offline_simulated'
+                  ? messages.simulatedOffline
+                  : network.isOnline
+                    ? messages.online
+                    : messages.offline}
               </span>
+              {syncQueue.length > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="font-medium text-amber-800 tabular-nums">
+                    {messages.pendingSync}: {syncQueue.length}
+                  </span>
+                </>
+              )}
             </div>
             <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
               {messages.student.welcomeBack}, {profile.name}

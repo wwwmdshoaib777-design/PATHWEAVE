@@ -62,6 +62,12 @@ export interface QuizQuestion {
   explanation: LocalizedText;
 }
 
+export interface StoredQuizQuestion extends QuizQuestion {
+  quizId: string;
+  subjectId: SubjectId;
+  orderIndex: number;
+}
+
 export interface Quiz {
   id: string;
   subjectId: SubjectId;
@@ -80,6 +86,19 @@ export interface LessonProgressRecord {
   completionPercent: number;
   lastViewedAt: string;
   completedAt?: string;
+}
+
+export interface TopicProgressRecord {
+  id: string;
+  studentId: string;
+  subjectId: SubjectId;
+  topicKey: string;
+  topicLabel: LocalizedText;
+  attemptsCount: number;
+  questionsAnswered: number;
+  correctCount: number;
+  accuracyPercent: number;
+  lastPracticedAt: string;
 }
 
 export interface QuizAttemptRecord {
@@ -104,6 +123,15 @@ export interface DownloadedMaterialRecord {
   downloadedAt: string;
   sizeKB: number;
   packetVersion: string;
+}
+
+export interface DownloadedLessonRecord {
+  id: string;
+  lesson: Lesson;
+  downloadedAt: string;
+  sizeKB: number;
+  packetVersion: string;
+  cachedAssetUrls: string[];
 }
 
 export interface StudentRosterRecord {
@@ -132,12 +160,22 @@ export interface LearningPacket {
 
 export interface SyncQueueItem {
   id: string;
-  entityType: 'progress' | 'quiz_attempt' | 'student' | 'material' | 'packet';
+  entityType:
+    | 'progress'
+    | 'topic_progress'
+    | 'quiz_attempt'
+    | 'student'
+    | 'material'
+    | 'packet';
   entityId: string;
   action: 'create' | 'update' | 'delete';
   summary: string;
+  payload?: unknown;
   createdAt: string;
-  status: 'pending_stage2_sync';
+  status: 'pending' | 'failed_retained';
+  retryCount: number;
+  lastAttemptAt?: string | null;
+  lastError?: string | null;
 }
 
 export interface ActivityRecord {

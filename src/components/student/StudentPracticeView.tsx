@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, ClipboardCheck, RotateCcw, XCircle } from 'lucide-react';
 import { usePathweave } from '../../context/PathweaveContext';
 import { pickLocalized } from '../../modules/i18n/translations';
@@ -24,6 +24,11 @@ export const StudentPracticeView: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submittedAttempt, setSubmittedAttempt] = useState<QuizAttemptRecord | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setAnswers({});
+    setSubmittedAttempt(null);
+  }, [activeQuizId]);
 
   const handleSelectOption = (questionId: string, optionIndex: number) => {
     if (submittedAttempt) return;

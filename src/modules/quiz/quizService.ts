@@ -1,14 +1,59 @@
-import { Quiz, QuizAttemptRecord } from '../../types/domain';
-import { storageService } from '../storage/storageService';
+import { Quiz, QuizAttemptRecord, StoredQuizQuestion } from '../../types/domain';
+import { createUniqueId, storageService } from '../storage/storageService';
 import { SAMPLE_QUIZZES } from './sampleQuizzes';
 
 class QuizService {
+  async ensureQuizzesSeeded(): Promise<Quiz[]> {
+    const adapter = await storageService.getAdapter();
+    const existingQuizzes = await adapter.getAll<Quiz>('quizzes');
+    const existingQuestions = await adapter.getAll<StoredQuizQuestion>('quizQuestions');
+
+    if (existingQuizzes.length === 0 || existingQuestions.length === 0) {
+      await Promise.all(
+        SAMPLE_QUIZZES.map(async (quiz) => {
+          await adapter.put('quizzes', quiz.id, quiz);
+          await Promise.all(
+            quiz.questions.map((question, idx) => {
+              const storedQ: StoredQuizQuestion = {
+                ...question,
+                quizId: quiz.id,
+                subjectId: quiz.subjectId,
+                orderIndex: idx,
+              };
+              return adapter.put('quizQuestions', storedQ.id, storedQ);
+            })
+          );
+        })
+      );
+      return SAMPLE_QUIZZES;
+    }
+
+    return this.assembleQuizzesFromDb(existingQuizzes, existingQuestions);
+  }
+
+  private assembleQuizzesFromDb(quizzes: Quiz[], questions: StoredQuizQuestion[]): Quiz[] {
+    return quizzes.map((quiz) => {
+      const matched = questions
+        .filter((q) => q.quizId === quiz.id)
+        .sort((a, b) => a.orderIndex - b.orderIndex);
+      return {
+        ...quiz,
+        questions: matched.length > 0 ? matched : quiz.questions,
+      };
+    });
+  }
+
+  async getQuizzesFromDb(): Promise<Quiz[]> {
+    return this.ensureQuizzesSeeded();
+  }
+
   getQuizzes(): Quiz[] {
     return SAMPLE_QUIZZES;
   }
 
-  getQuizById(quizId: string): Quiz | undefined {
-    return SAMPLE_QUIZZES.find((q) => q.id === quizId);
+  async getQuizByIdFromDb(quizId: string): Promise<Quiz | undefined> {
+    const quizzes = await this.getQuizzesFromDb();
+    return quizzes.find((q) => q.id === quizId);
   }
 
   async submitQuizAttempt(
@@ -31,14 +76,14 @@ class QuizService {
     const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
 
     const record: QuizAttemptRecord = {
-      id: `attempt-${quiz.id}-${Date.now()}`,
+      id: createUniqueId('attempt'),
       quizId: quiz.id,
       subjectId: quiz.subjectId,
       studentId,
       score,
       totalQuestions,
       percentage,
-      answers,
+      answers: { ...answers },
       topicResults,
       submittedAt: new Date().toISOString(),
     };

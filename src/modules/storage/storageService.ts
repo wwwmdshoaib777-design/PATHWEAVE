@@ -2,9 +2,17 @@ import { ALL_STORES, StorageAdapter, StoreName } from './StorageAdapter';
 import { IndexedDBAdapter } from './IndexedDBAdapter';
 import { LocalStorageFallbackAdapter } from './LocalStorageFallbackAdapter';
 
+export function createUniqueId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 class StorageService {
   private adapter: StorageAdapter | null = null;
   private initPromise: Promise<StorageAdapter> | null = null;
+  private lastError: string | null = null;
 
   async getAdapter(): Promise<StorageAdapter> {
     if (this.adapter) return this.adapter;
@@ -15,8 +23,13 @@ class StorageService {
       try {
         await idb.init();
         this.adapter = idb;
+        this.lastError = null;
         return idb;
-      } catch {
+      } catch (err) {
+        this.lastError =
+          err instanceof Error
+            ? `IndexedDB unavailable (${err.message}); using localStorage fallback.`
+            : 'IndexedDB unavailable; using localStorage fallback.';
         const fallback = new LocalStorageFallbackAdapter();
         await fallback.init();
         this.adapter = fallback;
@@ -27,9 +40,14 @@ class StorageService {
     return this.initPromise;
   }
 
+  getLastError(): string | null {
+    return this.lastError;
+  }
+
   async getDiagnostics(): Promise<{
     engine: 'IndexedDB' | 'localStorage';
     counts: Record<StoreName, number>;
+    error: string | null;
   }> {
     const adapter = await this.getAdapter();
     const entries = await Promise.all(
@@ -38,12 +56,29 @@ class StorageService {
     return {
       engine: adapter.engineName,
       counts: Object.fromEntries(entries) as Record<StoreName, number>,
+      error: this.lastError,
     };
   }
 
-  async resetAllLocalData(): Promise<void> {
+  async resetUserLearningData(): Promise<void> {
     const adapter = await this.getAdapter();
-    await Promise.all(ALL_STORES.map((store) => adapter.clear(store)));
+    const userMutableStores: StoreName[] = [
+      'progress',
+      'topicProgress',
+      'quizAttempts',
+      'downloads',
+      'downloadedLessons',
+      'materials',
+      'students',
+      'activity',
+      'syncQueue',
+      'packets',
+    ];
+    await Promise.all(userMutableStores.map((store) => adapter.clear(store)));
+  }
+
+  async resetAllLocalData(): Promise<void> {
+    await this.resetUserLearningData();
   }
 }
 
