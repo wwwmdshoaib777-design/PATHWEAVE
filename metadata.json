@@ -1,0 +1,6 @@
+{
+  "name": "PATHWEAVE",
+  "description": "Offline-first adaptive learning platform designed for rural schools with unreliable internet connectivity.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

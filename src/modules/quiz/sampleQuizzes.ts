@@ -1,0 +1,347 @@
+import { Quiz } from '../../types/domain';
+
+export const SAMPLE_QUIZZES: Quiz[] = [
+  {
+    id: 'quiz-math-fractions',
+    subjectId: 'math',
+    lessonId: 'math-fractions-01',
+    grade: 6,
+    origin: 'sample',
+    title: {
+      en: 'Fractions & Ratios Practice Check',
+      kn: 'ಭಿನ್ನರಾಶಿಗಳು ಮತ್ತು ಅನುಪಾತಗಳ ಅಭ್ಯಾಸ ರಸಪ್ರಶ್ನೆ',
+      hi: 'भिन्न और अनुपात अभ्यास प्रश्नोत्तरी',
+    },
+    description: {
+      en: '4 practical questions covering equivalent fractions, simplification, and ratios.',
+      kn: 'ಸಮಾನ ಭಿನ್ನರಾಶಿಗಳು, ಸರಳೀಕರಣ ಮತ್ತು ಅನುಪಾತಗಳ 4 ಪ್ರಾಯೋಗಿಕ ಪ್ರಶ್ನೆಗಳು.',
+      hi: 'समतुल्य भिन्न, सरलीकरण और अनुपात पर आधारित 4 व्यावहारिक प्रश्न।',
+    },
+    questions: [
+      {
+        id: 'q-m-1',
+        topicKey: 'fractions',
+        topicLabel: {
+          en: 'Fractions & Decimals',
+          kn: 'ಭಿನ್ನರಾಶಿಗಳು ಮತ್ತು ದಶಮಾಂಶಗಳು',
+          hi: 'भिन्न और दशमलव',
+        },
+        prompt: {
+          en: 'Which fraction is equivalent to 3/4?',
+          kn: '3/4 ಗೆ ಸಮಾನವಾದ ಭಿನ್ನರಾಶಿ ಯಾವುದು?',
+          hi: 'निम्न में से कौन-सा भिन्न 3/4 के समतुल्य है?',
+        },
+        options: [
+          { en: '6/8', kn: '6/8', hi: '6/8' },
+          { en: '4/6', kn: '4/6', hi: '4/6' },
+          { en: '5/8', kn: '5/8', hi: '5/8' },
+          { en: '9/16', kn: '9/16', hi: '9/16' },
+        ],
+        correctIndex: 0,
+        explanation: {
+          en: 'Multiplying both numerator and denominator of 3/4 by 2 gives 6/8.',
+          kn: '3/4 ರ ಅಂಶ ಮತ್ತು ಛೇದವನ್ನು 2 ರಿಂದ ಗುಣಿಸಿದಾಗ 6/8 ಸಿಗುತ್ತದೆ.',
+          hi: '3/4 के अंश और हर दोनों को 2 से गुणा करने पर 6/8 प्राप्त होता है।',
+        },
+      },
+      {
+        id: 'q-m-2',
+        topicKey: 'fractions',
+        topicLabel: {
+          en: 'Fractions & Decimals',
+          kn: 'ಭಿನ್ನರಾಶಿಗಳು ಮತ್ತು ದಶಮಾಂಶಗಳು',
+          hi: 'भिन्न और दशमलव',
+        },
+        prompt: {
+          en: 'What is the simplest form of 12/18?',
+          kn: '12/18 ರ ಅತ್ಯಂತ ಸರಳ ರೂಪ ಯಾವುದು?',
+          hi: '12/18 का सरलतम रूप क्या है?',
+        },
+        options: [
+          { en: '3/4', kn: '3/4', hi: '3/4' },
+          { en: '2/3', kn: '2/3', hi: '2/3' },
+          { en: '4/6', kn: '4/6', hi: '4/6' },
+          { en: '6/9', kn: '6/9', hi: '6/9' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'The HCF of 12 and 18 is 6. Dividing both by 6 gives 2/3.',
+          kn: '12 ಮತ್ತು 18 ರ ಮ.ಸಾ.ಅ 6 ಆಗಿದೆ. ಎರಡನ್ನೂ 6 ರಿಂದ ಭಾಗಿಸಿದರೆ 2/3 ಸಿಗುತ್ತದೆ.',
+          hi: '12 और 18 का महत्तम समापवर्तक 6 है। दोनों को 6 से भाग देने पर 2/3 मिलता है।',
+        },
+      },
+      {
+        id: 'q-m-3',
+        topicKey: 'ratios',
+        topicLabel: {
+          en: 'Ratios & Proportions',
+          kn: 'ಅನುಪಾತ ಮತ್ತು ಸಮಾನುಪಾತ',
+          hi: 'अनुपात और समानुपात',
+        },
+        prompt: {
+          en: 'If 4 kg of millet costs ₹160, how much will 7 kg cost at the same rate?',
+          kn: '4 ಕೆಜಿ ಸಿರಿಧಾನ್ಯದ ಬೆಲೆ ₹160 ಆದರೆ, ಅದೇ ದರದಲ್ಲಿ 7 ಕೆಜಿಗೆ ಎಷ್ಟು ಬೆಲೆಯಾಗುತ್ತದೆ?',
+          hi: 'यदि 4 किग्रा बाजरा ₹160 का है, तो उसी दर से 7 किग्रा कितने का होगा?',
+        },
+        options: [
+          { en: '₹240', kn: '₹240', hi: '₹240' },
+          { en: '₹280', kn: '₹280', hi: '₹280' },
+          { en: '₹300', kn: '₹300', hi: '₹300' },
+          { en: '₹320', kn: '₹320', hi: '₹320' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: '1 kg costs ₹160 ÷ 4 = ₹40. Therefore 7 kg costs 7 × ₹40 = ₹280.',
+          kn: '1 ಕೆಜಿ ಬೆಲೆ ₹160 ÷ 4 = ₹40. ಆದ್ದರಿಂದ 7 ಕೆಜಿ ಬೆಲೆ 7 × ₹40 = ₹280.',
+          hi: '1 किग्रा की कीमत ₹160 ÷ 4 = ₹40 है। इसलिए 7 किग्रा की कीमत 7 × ₹40 = ₹280 होगी।',
+        },
+      },
+      {
+        id: 'q-m-4',
+        topicKey: 'area_perimeter',
+        topicLabel: {
+          en: 'Area & Perimeter',
+          kn: 'ವಿಸ್ತೀರ್ಣ ಮತ್ತು ಸುತ್ತಳತೆ',
+          hi: 'क्षेत्रफल और परिमाप',
+        },
+        prompt: {
+          en: 'A rectangular classroom plot is 15 m long and 10 m wide. What is its perimeter?',
+          kn: '15 ಮೀ ಉದ್ದ ಮತ್ತು 10 ಮೀ ಅಗಲದ ಆಯತಾಕಾರದ ಜಾಗದ ಸುತ್ತಳತೆ ಎಷ್ಟು?',
+          hi: 'एक आयताकार मैदान 15 मीटर लंबा और 10 मीटर चौड़ा है। इसका परिमाप क्या है?',
+        },
+        options: [
+          { en: '25 m', kn: '25 ಮೀ', hi: '25 मीटर' },
+          { en: '50 m', kn: '50 ಮೀ', hi: '50 मीटर' },
+          { en: '150 m', kn: '150 ಮೀ', hi: '150 मीटर' },
+          { en: '60 m', kn: '60 ಮೀ', hi: '60 मीटर' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Perimeter of a rectangle = 2 × (length + width) = 2 × (15 + 10) = 50 m.',
+          kn: 'ಆಯತದ ಸುತ್ತಳತೆ = 2 × (ಉದ್ದ + ಅಗಲ) = 2 × (15 + 10) = 50 ಮೀ.',
+          hi: 'आयत का परिमाप = 2 × (लंबाई + चौड़ाई) = 2 × (15 + 10) = 50 मीटर।',
+        },
+      },
+    ],
+  },
+  {
+    id: 'quiz-math-algebra',
+    subjectId: 'math',
+    lessonId: 'math-algebra-04',
+    grade: 8,
+    origin: 'sample',
+    title: {
+      en: 'Linear Equations & Geometry Check',
+      kn: 'ರೇಖೀಯ ಸಮೀಕರಣಗಳು ಮತ್ತು ಜ್ಯಾಮಿತಿ ಪರೀಕ್ಷೆ',
+      hi: 'रैखिक समीकरण और ज्यामिति अभ्यास',
+    },
+    description: {
+      en: '3 focused problems on solving equations and calculating triangle area.',
+      kn: 'ಸಮೀಕರಣ ಬಿಡಿಸುವಿಕೆ ಮತ್ತು ತ್ರಿಕೋನ ವಿಸ್ತೀರ್ಣದ 3 ಪ್ರಶ್ನೆಗಳು.',
+      hi: 'समीकरण हल करने और त्रिभुज के क्षेत्रफल पर 3 मुख्य प्रश्न।',
+    },
+    questions: [
+      {
+        id: 'q-ma-1',
+        topicKey: 'linear_equations',
+        topicLabel: {
+          en: 'Linear Equations',
+          kn: 'ರೇಖೀಯ ಸಮೀಕರಣಗಳು',
+          hi: 'रैखिक समीकरण',
+        },
+        prompt: {
+          en: 'Solve for x: 4x + 7 = 31',
+          kn: 'x ಮೌಲ್ಯ ಕಂಡುಹಿಡಿಯಿರಿ: 4x + 7 = 31',
+          hi: 'x का मान ज्ञात कीजिए: 4x + 7 = 31',
+        },
+        options: [
+          { en: 'x = 5', kn: 'x = 5', hi: 'x = 5' },
+          { en: 'x = 6', kn: 'x = 6', hi: 'x = 6' },
+          { en: 'x = 8', kn: 'x = 8', hi: 'x = 8' },
+          { en: 'x = 9.5', kn: 'x = 9.5', hi: 'x = 9.5' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Subtract 7 from both sides: 4x = 24. Divide by 4: x = 6.',
+          kn: 'ಎರಡೂ ಬದಿಗಳಿಂದ 7 ಕಳೆಯಿರಿ: 4x = 24. 4 ರಿಂದ ಭಾಗಿಸಿ: x = 6.',
+          hi: 'दोनों तरफ से 7 घटाने पर 4x = 24 आता है। 4 से भाग देने पर x = 6 मिलता है।',
+        },
+      },
+      {
+        id: 'q-ma-2',
+        topicKey: 'area_perimeter',
+        topicLabel: {
+          en: 'Area & Perimeter',
+          kn: 'ವಿಸ್ತೀರ್ಣ ಮತ್ತು ಸುತ್ತಳತೆ',
+          hi: 'क्षेत्रफल और परिमाप',
+        },
+        prompt: {
+          en: 'What is the area of a triangle with base 12 cm and height 5 cm?',
+          kn: '12 ಸೆಂ.ಮೀ ಪಾದ ಮತ್ತು 5 ಸೆಂ.ಮೀ ಎತ್ತರವಿರುವ ತ್ರಿಕೋನದ ವಿಸ್ತೀರ್ಣ ಎಷ್ಟು?',
+          hi: '12 सेमी आधार और 5 सेमी ऊँचाई वाले त्रिभुज का क्षेत्रफल क्या होगा?',
+        },
+        options: [
+          { en: '60 sq cm', kn: '60 ಚ.ಸೆಂ.ಮೀ', hi: '60 वर्ग सेमी' },
+          { en: '30 sq cm', kn: '30 ಚ.ಸೆಂ.ಮೀ', hi: '30 वर्ग सेमी' },
+          { en: '17 sq cm', kn: '17 ಚ.ಸೆಂ.ಮೀ', hi: '17 वर्ग सेमी' },
+          { en: '24 sq cm', kn: '24 ಚ.ಸೆಂ.ಮೀ', hi: '24 वर्ग सेमी' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Area of triangle = (1/2) × base × height = (1/2) × 12 × 5 = 30 sq cm.',
+          kn: 'ತ್ರಿಕೋನದ ವಿಸ್ತೀರ್ಣ = (1/2) × 12 × 5 = 30 ಚ.ಸೆಂ.ಮೀ.',
+          hi: 'त्रिभुज का क्षेत्रफल = (1/2) × 12 × 5 = 30 वर्ग सेमी।',
+        },
+      },
+      {
+        id: 'q-ma-3',
+        topicKey: 'linear_equations',
+        topicLabel: {
+          en: 'Linear Equations',
+          kn: 'ರೇಖೀಯ ಸಮೀಕರಣಗಳು',
+          hi: 'रैखिक समीकरण',
+        },
+        prompt: {
+          en: 'If 2y - 3 = 11, what is y?',
+          kn: '2y - 3 = 11 ಆದರೆ, y ಮೌಲ್ಯ ಎಷ್ಟು?',
+          hi: 'यदि 2y - 3 = 11 है, तो y का मान क्या है?',
+        },
+        options: [
+          { en: '4', kn: '4', hi: '4' },
+          { en: '7', kn: '7', hi: '7' },
+          { en: '8', kn: '8', hi: '8' },
+          { en: '14', kn: '14', hi: '14' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Add 3 to both sides: 2y = 14, then divide by 2 to get y = 7.',
+          kn: 'ಎರಡೂ ಬದಿಗಳಿಗೆ 3 ಸೇರಿಸಿ: 2y = 14, ನಂತರ 2 ರಿಂದ ಭಾಗಿಸಿ y = 7.',
+          hi: 'दोनों तरफ 3 जोड़ने पर 2y = 14 और 2 से भाग देने पर y = 7 मिलता है।',
+        },
+      },
+    ],
+  },
+  {
+    id: 'quiz-science-core',
+    subjectId: 'science',
+    lessonId: 'sci-photosynthesis-01',
+    grade: 7,
+    origin: 'sample',
+    title: {
+      en: 'Plant Nutrition & Electric Circuits Quiz',
+      kn: 'ಸಸ್ಯ ಪೋಷಣೆ ಮತ್ತು ವಿದ್ಯುತ್ ಸರ್ಕ್ಯೂಟ್ ರಸಪ್ರಶ್ನೆ',
+      hi: 'पादप पोषण और विद्युत परिपथ प्रश्नोत्तरी',
+    },
+    description: {
+      en: '4 questions covering photosynthesis, conductors, water conservation, and soil indicators.',
+      kn: 'ದ್ಯುತಿಸಂಶ್ಲೇಷಣೆ, ವಿದ್ಯುತ್ ವಾಹಕಗಳು, ನೀರಿನ ಸಂರಕ್ಷಣೆ ಮತ್ತು ಮಣ್ಣಿನ ಸೂಚಕಗಳ 4 ಪ್ರಶ್ನೆಗಳು.',
+      hi: 'प्रकाश संश्लेषण, सुचालक, जल संरक्षण और मिट्टी सूचक पर 4 प्रश्न।',
+    },
+    questions: [
+      {
+        id: 'q-s-1',
+        topicKey: 'plant_nutrition',
+        topicLabel: {
+          en: 'Plant Nutrition',
+          kn: 'ಸಸ್ಯಗಳಲ್ಲಿ ಪೋಷಣೆ',
+          hi: 'पादपों में पोषण',
+        },
+        prompt: {
+          en: 'Which gas do green leaves absorb from air during photosynthesis?',
+          kn: 'ದ್ಯುತಿಸಂಶ್ಲೇಷಣೆಯ ಸಮಯದಲ್ಲಿ ಹಸಿರು ಎಲೆಗಳು ಗಾಳಿಯಿಂದ ಯಾವ ಅನಿಲವನ್ನು ಹೀರಿಕೊಳ್ಳುತ್ತವೆ?',
+          hi: 'प्रकाश संश्लेषण के दौरान हरी पत्तियाँ हवा से कौन-सी गैस सोखती हैं?',
+        },
+        options: [
+          { en: 'Oxygen', kn: 'ಆಮ್ಲಜನಕ (Oxygen)', hi: 'ऑक्सीजन' },
+          { en: 'Carbon Dioxide', kn: 'ಕಾರ್ಬನ್ ಡೈಆಕ್ಸೈಡ್', hi: 'कार्बन डाइऑक्साइड' },
+          { en: 'Nitrogen', kn: 'ಸಾರಜನಕ (Nitrogen)', hi: 'नाइट्रोजन' },
+          { en: 'Hydrogen', kn: 'ಜಲಜನಕ (Hydrogen)', hi: 'हाइड्रोजन' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Leaves take in carbon dioxide through stomata and release oxygen as a by-product.',
+          kn: 'ಎಲೆಗಳು ಪತ್ರರಂಧ್ರಗಳ ಮೂಲಕ ಕಾರ್ಬನ್ ಡೈಆಕ್ಸೈಡ್ ಹೀರಿಕೊಂಡು ಆಮ್ಲಜನಕವನ್ನು ಬಿಡುಗಡೆ ಮಾಡುತ್ತವೆ.',
+          hi: 'पत्तियाँ रंध्रों से कार्बन डाइऑक्साइड लेती हैं और ऑक्सीजन बाहर छोड़ती हैं।',
+        },
+      },
+      {
+        id: 'q-s-2',
+        topicKey: 'circuits',
+        topicLabel: {
+          en: 'Electricity & Circuits',
+          kn: 'ವಿದ್ಯುತ್ ಮತ್ತು ಸರ್ಕ್ಯೂಟ್‌ಗಳು',
+          hi: 'विद्युत तथा परिपथ',
+        },
+        prompt: {
+          en: 'Which material is a good electrical conductor suitable for wiring?',
+          kn: 'ವಿದ್ಯುತ್ ತಂತಿಗಳಿಗೆ ಸೂಕ್ತವಾದ ಉತ್ತಮ ವಿದ್ಯುತ್ ವಾಹಕ ಯಾವುದು?',
+          hi: 'तार बनाने के लिए कौन-सा पदार्थ अच्छा विद्युत सुचालक है?',
+        },
+        options: [
+          { en: 'Dry wood', kn: 'ಒಣ ಮರ', hi: 'सूखी लकड़ी' },
+          { en: 'Plastic', kn: 'ಪ್ಲಾಸ್ಟಿಕ್', hi: 'प्लास्टिक' },
+          { en: 'Copper', kn: 'ತಾಮ್ರ (Copper)', hi: 'तांबा' },
+          { en: 'Rubber', kn: 'ರಬ್ಬರ್', hi: 'रबर' },
+        ],
+        correctIndex: 2,
+        explanation: {
+          en: 'Copper is a metal that conducts electricity efficiently, while plastic and rubber insulate wires safely.',
+          kn: 'ತಾಮ್ರವು ಉತ್ತಮ ವಿದ್ಯುತ್ ವಾಹಕ ಲೋಹವಾಗಿದೆ. ಪ್ಲಾಸ್ಟಿಕ್ ಮತ್ತು ರಬ್ಬರ್ ಅವಾಹಕಗಳಾಗಿವೆ.',
+          hi: 'तांबा एक धातु है जो बिजली का अच्छा सुचालक है, जबकि प्लास्टिक और रबर कुचालक हैं।',
+        },
+      },
+      {
+        id: 'q-s-3',
+        topicKey: 'water_cycle',
+        topicLabel: {
+          en: 'Water Conservation',
+          kn: 'ನೀರಿನ ಸಂರಕ್ಷಣೆ',
+          hi: 'जल संरक्षण',
+        },
+        prompt: {
+          en: 'Which irrigation method delivers water drop by drop directly to plant roots?',
+          kn: 'ಸಸ್ಯಗಳ ಬೇರುಗಳಿಗೆ ಹನಿ ಹನಿಯಾಗಿ ನೇರವಾಗಿ ನೀರು ನೀಡುವ ಪದ್ಧತಿ ಯಾವುದು?',
+          hi: 'कौन-सी सिंचाई विधि पौधों की जड़ों तक सीधे बूंद-बूंद पानी पहुँचाती है?',
+        },
+        options: [
+          { en: 'Flood irrigation', kn: 'ಪ್ರವಾಹ ನೀರಾವರಿ', hi: 'बाढ़ सिंचाई' },
+          { en: 'Drip irrigation', kn: 'ಹನಿ ನೀರಾವರಿ', hi: 'ड्रिप सिंचाई' },
+          { en: 'Open canal flow', kn: 'ತೆರೆದ ಕಾಲುವೆ ಹರಿವು', hi: 'खुली नहर सिंचाई' },
+          { en: 'Surface evaporation', kn: 'ಮೇಲ್ಮೈ ಆವಿಯಾಗುವಿಕೆ', hi: 'सतह वाष्पीकरण' },
+        ],
+        correctIndex: 1,
+        explanation: {
+          en: 'Drip irrigation minimizes evaporation and runoff by supplying water directly to the root zone.',
+          kn: 'ಹನಿ ನೀರಾವರಿ ಬೇರುಗಳಿಗೆ ನೇರವಾಗಿ ನೀರು ನೀಡಿ ನೀರು ಆವಿಯಾಗುವುದನ್ನು ತಡೆಯುತ್ತದೆ.',
+          hi: 'ड्रिप सिंचाई सीधे जड़ों के पास पानी देकर वाष्पीकरण से होने वाली बर्बादी को कम करती है।',
+        },
+      },
+      {
+        id: 'q-s-4',
+        topicKey: 'soil_acids',
+        topicLabel: {
+          en: 'Acids, Bases & Soil pH',
+          kn: 'ಆಮ್ಲಗಳು, ಪ್ರತ್ಯಾಮ್ಲಗಳು ಮತ್ತು ಮಣ್ಣಿನ pH',
+          hi: 'अम्ल, क्षार और मिट्टी का pH',
+        },
+        prompt: {
+          en: 'What colour does blue litmus paper turn when dipped in lemon juice?',
+          kn: 'ನಿಂಬೆ ರಸದಲ್ಲಿ ಅದ್ದಿದಾಗ ನೀಲಿ ಲಿಟ್ಮಸ್ ಕಾಗದ ಯಾವ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುತ್ತದೆ?',
+          hi: 'नींबू के रस में डुबोने पर नीला लिटमस पेपर किस रंग का हो जाता है?',
+        },
+        options: [
+          { en: 'Red', kn: 'ಕೆಂಪು', hi: 'लाल' },
+          { en: 'Green', kn: 'ಹಸಿರು', hi: 'हरा' },
+          { en: 'Stays blue', kn: 'ನೀಲಿಯಾಗಿಯೇ ಇರುತ್ತದೆ', hi: 'नीला ही रहता है' },
+          { en: 'Black', kn: 'ಕಪ್ಪು', hi: 'काला' },
+        ],
+        correctIndex: 0,
+        explanation: {
+          en: 'Lemon juice contains citric acid, and acids turn blue litmus paper red.',
+          kn: 'ನಿಂಬೆ ರಸದಲ್ಲಿ ಸಿಟ್ರಿಕ್ ಆಮ್ಲವಿದ್ದು, ಅದು ನೀಲಿ ಲಿಟ್ಮಸ್ ಅನ್ನು ಕೆಂಪು ಬಣ್ಣಕ್ಕೆ ತಿರುಗಿಸುತ್ತದೆ.',
+          hi: 'नींबू के रस में साइट्रिक अम्ल होता है, जो नीले लिटमस को लाल कर देता है।',
+        },
+      },
+    ],
+  },
+];
