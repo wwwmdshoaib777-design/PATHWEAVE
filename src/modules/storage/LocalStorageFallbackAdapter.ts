@@ -22,8 +22,10 @@ export class LocalStorageFallbackAdapter implements StorageAdapter {
   private writeStore<T>(store: StoreName, data: Record<string, T>): void {
     try {
       window.localStorage.setItem(`${PREFIX}${store}`, JSON.stringify(data));
-    } catch {
-      // Ignore storage quota errors in restricted sandboxes
+    } catch (err) {
+      throw err instanceof Error
+        ? err
+        : new Error(`Failed writing ${store} to localStorage fallback.`);
     }
   }
 

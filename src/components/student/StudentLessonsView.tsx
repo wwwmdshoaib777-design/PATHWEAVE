@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -35,6 +35,10 @@ export const StudentLessonsView: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<LessonFilter>(selectedSubjectFilter);
+
+  useEffect(() => {
+    setFilterMode(selectedSubjectFilter);
+  }, [selectedSubjectFilter]);
 
   const effectiveFilter: LessonFilter =
     filterMode === 'offline' ? 'offline' : selectedSubjectFilter;
@@ -150,8 +154,9 @@ export const StudentLessonsView: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              disabled={!network.isOnline && !isDownloaded}
               onClick={() => toggleDownloadLesson(activeLesson)}
-              className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-4 py-2 text-xs font-semibold transition-colors ${
+              className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg border px-4 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 isDownloaded
                   ? 'border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100'
                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'

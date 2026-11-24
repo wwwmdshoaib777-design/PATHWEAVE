@@ -24,10 +24,12 @@ export const StudentPracticeView: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submittedAttempt, setSubmittedAttempt] = useState<QuizAttemptRecord | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     setAnswers({});
     setSubmittedAttempt(null);
+    setSubmitError(null);
   }, [activeQuizId]);
 
   const handleSelectOption = (questionId: string, optionIndex: number) => {
@@ -39,9 +41,16 @@ export const StudentPracticeView: React.FC = () => {
     e.preventDefault();
     if (!activeQuiz || submitting) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const attempt = await submitQuiz(activeQuiz, answers);
       setSubmittedAttempt(attempt);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to save quiz attempt to local storage. Please try again.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -50,17 +59,20 @@ export const StudentPracticeView: React.FC = () => {
   const handleRetake = () => {
     setAnswers({});
     setSubmittedAttempt(null);
+    setSubmitError(null);
   };
 
   const handleBack = () => {
     setAnswers({});
     setSubmittedAttempt(null);
+    setSubmitError(null);
     closeQuizRunner();
   };
 
   if (activeQuiz) {
     const answeredCount = Object.keys(answers).length;
-    const allAnswered = answeredCount === activeQuiz.questions.length;
+    const allAnswered =
+      activeQuiz.questions.length > 0 && answeredCount === activeQuiz.questions.length;
 
     return (
       <div className="mx-auto max-w-3xl space-y-6">
@@ -101,7 +113,9 @@ export const StudentPracticeView: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-xs text-teal-800">
-                  Result saved to local IndexedDB progress history.
+                  Result saved to local IndexedDB progress history ·{' '}
+                  <span className="font-mono">{submittedAttempt.id.slice(0, 18)}</span> ·{' '}
+                  {new Date(submittedAttempt.submittedAt).toLocaleString()}
                 </div>
               </div>
               <button
@@ -184,6 +198,12 @@ export const StudentPracticeView: React.FC = () => {
                 </fieldset>
               );
             })}
+
+            {submitError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800">
+                {submitError}
+              </div>
+            )}
 
             {!submittedAttempt && (
               <div className="flex items-center justify-end gap-3 pt-2">

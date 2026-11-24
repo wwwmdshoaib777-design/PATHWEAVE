@@ -111,6 +111,30 @@ class SyncService {
         };
       }
 
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        const reason =
+          'Cloud synchronization endpoint is not deployed yet (Stage 3). Events retained locally.';
+        await Promise.all(
+          queued.map((evt) =>
+            adapter.put('syncQueue', evt.id, {
+              ...evt,
+              status: 'failed_retained',
+              retryCount: evt.retryCount + 1,
+              lastAttemptAt: attemptedAt,
+              lastError: reason,
+            } satisfies SyncQueueItem)
+          )
+        );
+        return {
+          attempted: true,
+          syncedCount: 0,
+          retainedCount: queued.length,
+          message: reason,
+          attemptedAt,
+        };
+      }
+
       const data = (await response.json().catch(() => null)) as {
         acknowledgedIds?: string[];
       } | null;

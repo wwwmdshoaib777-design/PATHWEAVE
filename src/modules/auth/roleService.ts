@@ -32,6 +32,11 @@ class RoleService {
       await adapter.put('studentProfiles', DEMO_STUDENT_PROFILE.id, DEMO_STUDENT_PROFILE);
       return DEMO_STUDENT_PROFILE;
     }
+    if (existing.name !== DEMO_STUDENT_PROFILE.name) {
+      const updated = { ...existing, name: DEMO_STUDENT_PROFILE.name };
+      await adapter.put('studentProfiles', DEMO_STUDENT_PROFILE.id, updated);
+      return updated;
+    }
     return existing;
   }
 

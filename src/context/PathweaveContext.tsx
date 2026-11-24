@@ -103,6 +103,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [role, setRole] = useState<UserRole>('student');
   const [language, setLanguage] = useState<LanguageCode>('en');
   const [offlineTestMode, setOfflineTestModeState] = useState<boolean>(false);
+  const [studentProfile, setStudentProfile] = useState<UserProfile | null>(null);
   const [studentTab, setStudentTab] = useState<StudentNavTab>('dashboard');
   const [teacherTab, setTeacherTab] = useState<TeacherNavTab>('dashboard');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<SubjectId | 'all'>('all');
@@ -185,7 +186,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const prefs = await roleService.getSavedPreferences();
       if (cancelled) return;
 
-      const studentProfile = await roleService.ensureProfilesSeeded();
+      const seededStudent = await roleService.ensureProfilesSeeded();
       await lessonService.ensureSubjectsSeeded();
       await quizService.ensureQuizzesSeeded();
 
@@ -193,8 +194,9 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setRole(prefs.role);
       setLanguage(prefs.language);
       setOfflineTestModeState(prefs.offlineTestMode);
+      setStudentProfile({ ...seededStudent, preferredLanguage: prefs.language });
 
-      await refreshData(studentProfile.id);
+      await refreshData(seededStudent.id);
 
       if (!cancelled) {
         setReady(true);
@@ -208,8 +210,13 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [refreshData]);
 
-  const profile = roleService.getProfileForRole(role, language);
-  const studentProfileId = roleService.getProfileForRole('student', language).id;
+  const fallbackStudentProfile = roleService.getProfileForRole('student', language);
+  const activeStudentProfile = studentProfile
+    ? { ...studentProfile, preferredLanguage: language }
+    : fallbackStudentProfile;
+  const profile =
+    role === 'student' ? activeStudentProfile : roleService.getProfileForRole('teacher', language);
+  const studentProfileId = activeStudentProfile.id;
   const messages = TRANSLATIONS[language];
 
   const switchRole = useCallback(async (nextRole: UserRole) => {
@@ -221,6 +228,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const changeLanguage = useCallback(async (nextLang: LanguageCode) => {
     setLanguage(nextLang);
+    setStudentProfile((prev) => (prev ? { ...prev, preferredLanguage: nextLang } : prev));
     await roleService.saveLanguagePreference(nextLang);
   }, []);
 
@@ -283,10 +291,13 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (exists) {
         await lessonService.removeOfflineLesson(lesson.id);
       } else {
+        if (!network.isOnline) {
+          return;
+        }
         await lessonService.saveLessonOffline(lesson);
         await progressService.logActivity({
           actorRole: 'student',
-          actorName: roleService.getProfileForRole('student', language).name,
+          actorName: activeStudentProfile.name,
           category: 'download',
           description: {
             en: `Saved lesson offline: ${lesson.title.en}`,
@@ -297,7 +308,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       await refreshData(studentProfileId);
     },
-    [downloadedMaterials, language, refreshData, studentProfileId]
+    [activeStudentProfile.name, downloadedMaterials, network.isOnline, refreshData, studentProfileId]
   );
 
   const markLessonCompleted = useCallback(
@@ -467,6 +478,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     await storageService.resetUserLearningData();
     await roleService.saveRolePreference(role);
     await roleService.saveLanguagePreference(language);
+    setLastSyncResult(null);
     await refreshData(studentProfileId);
   }, [language, refreshData, role, studentProfileId]);
 
