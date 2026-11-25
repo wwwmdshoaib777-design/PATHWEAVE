@@ -43,13 +43,16 @@ export interface Lesson {
   subjectId: SubjectId;
   grade: number;
   topic: LocalizedText;
+  topicKey?: string;
   title: LocalizedText;
   summary: LocalizedText;
   estimatedMinutes: number;
   sizeKB: number;
   sections: LessonSection[];
   origin: DataOrigin;
+  authoredLanguage?: LanguageCode;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type DifficultyLevel = 'Easy' | 'Medium' | 'Hard';

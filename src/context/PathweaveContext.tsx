@@ -26,7 +26,11 @@ import {
 import { buildTeacherAdaptiveOverview } from '../modules/adaptive/adaptiveEngine';
 import { adaptiveService } from '../modules/adaptive/adaptiveService';
 import { CreateStudentInput, roleService } from '../modules/auth/roleService';
-import { CreateLocalLessonInput, lessonService } from '../modules/curriculum/lessonService';
+import {
+  CreateLocalLessonInput,
+  lessonService,
+  UpdateLocalLessonInput,
+} from '../modules/curriculum/lessonService';
 import { NetworkStatusState, useNetworkStatus } from '../modules/network/useNetworkStatus';
 import { packetService } from '../modules/packets/packetService';
 import { progressService } from '../modules/progress/progressService';
@@ -122,7 +126,8 @@ interface PathweaveContextValue {
   attemptSync: () => Promise<SyncAttemptSummary>;
   addLocalStudent: (input: CreateStudentInput) => Promise<void>;
   removeLocalStudent: (studentId: string) => Promise<void>;
-  createLocalLesson: (input: CreateLocalLessonInput) => Promise<void>;
+  createLocalLesson: (input: CreateLocalLessonInput) => Promise<Lesson>;
+  updateLocalLesson: (lessonId: string, input: UpdateLocalLessonInput) => Promise<Lesson>;
   removeLocalLesson: (lessonId: string) => Promise<void>;
   createLearningPacket: (title: string, subjectId: SubjectId, lessonIds: string[]) => Promise<void>;
   exportPacketJson: (packet: LearningPacket) => void;
@@ -551,16 +556,66 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         payload: lesson,
       });
       await refreshData(studentProfileId);
+      return lesson;
+    },
+    [language, refreshData, studentProfileId]
+  );
+
+  const updateLocalLesson = useCallback(
+    async (lessonId: string, input: UpdateLocalLessonInput) => {
+      const lesson = await lessonService.updateLocalLesson(lessonId, input);
+      await progressService.logActivity({
+        actorRole: 'teacher',
+        actorName: roleService.getProfileForRole('teacher', language).name,
+        category: 'material',
+        description: {
+          en: `Updated local lesson: ${lesson.title.en}`,
+          kn: `ಸ್ಥಳೀಯ ಪಾಠ ನವೀಕರಿಸಲಾಗಿದೆ: ${lesson.title.kn}`,
+          hi: `स्थानीय पाठ अपडेट किया गया: ${lesson.title.hi}`,
+        },
+      });
+      await syncService.enqueueLocalMutation({
+        entityType: 'material',
+        entityId: lesson.id,
+        action: 'update',
+        summary: `Updated local lesson: ${lesson.title.en}`,
+        payload: lesson,
+      });
+      await refreshData(studentProfileId);
+      return lesson;
     },
     [language, refreshData, studentProfileId]
   );
 
   const removeLocalLesson = useCallback(
     async (lessonId: string) => {
+      const existing = lessons.find((l) => l.id === lessonId);
+      const isSampleOverride = lessonService.isSampleLessonId(lessonId);
       await lessonService.deleteLocalLesson(lessonId);
+      if (activeLessonId === lessonId && !isSampleOverride) {
+        setActiveLessonId(null);
+      }
+      if (existing) {
+        await progressService.logActivity({
+          actorRole: 'teacher',
+          actorName: roleService.getProfileForRole('teacher', language).name,
+          category: 'material',
+          description: {
+            en: `${isSampleOverride ? 'Reverted local edit' : 'Deleted local lesson'}: ${existing.title.en}`,
+            kn: `${isSampleOverride ? 'ಸ್ಥಳೀಯ ಬದಲಾವಣೆ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ' : 'ಸ್ಥಳೀಯ ಪಾಠ ಅಳಿಸಲಾಗಿದೆ'}: ${existing.title.kn}`,
+            hi: `${isSampleOverride ? 'स्थानीय बदलाव हटाया गया' : 'स्थानीय पाठ हटाया गया'}: ${existing.title.hi}`,
+          },
+        });
+        await syncService.enqueueLocalMutation({
+          entityType: 'material',
+          entityId: lessonId,
+          action: 'delete',
+          summary: `${isSampleOverride ? 'Reverted sample override' : 'Deleted local lesson'}: ${existing.title.en}`,
+        });
+      }
       await refreshData(studentProfileId);
     },
-    [refreshData, studentProfileId]
+    [activeLessonId, language, lessons, refreshData, studentProfileId]
   );
 
   const createLearningPacket = useCallback(
@@ -657,6 +712,7 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addLocalStudent,
         removeLocalStudent,
         createLocalLesson,
+        updateLocalLesson,
         removeLocalLesson,
         createLearningPacket,
         exportPacketJson,

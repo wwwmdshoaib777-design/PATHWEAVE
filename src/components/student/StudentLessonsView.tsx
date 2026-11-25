@@ -55,9 +55,9 @@ export const StudentLessonsView: React.FC = () => {
 
   const activeLesson = useMemo(() => {
     if (!activeLessonId) return null;
-    const fromDownloaded = downloadedLessons.find((d) => d.id === activeLessonId)?.lesson;
-    if (fromDownloaded) return fromDownloaded;
-    return lessons.find((l) => l.id === activeLessonId) ?? null;
+    const fromLessons = lessons.find((l) => l.id === activeLessonId);
+    if (fromLessons) return fromLessons;
+    return downloadedLessons.find((d) => d.id === activeLessonId)?.lesson ?? null;
   }, [activeLessonId, downloadedLessons, lessons]);
 
   const filteredLessons = useMemo(() => {
@@ -202,6 +202,18 @@ export const StudentLessonsView: React.FC = () => {
             <span className="tabular-nums">{activeLesson.estimatedMinutes} min</span>
             <span aria-hidden="true">·</span>
             <span className="tabular-nums">{activeLesson.sizeKB} KB</span>
+            {activeLesson.authoredLanguage && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>
+                  {activeLesson.authoredLanguage === 'en'
+                    ? 'English'
+                    : activeLesson.authoredLanguage === 'kn'
+                      ? 'ಕನ್ನಡ'
+                      : 'हिन्दी'}
+                </span>
+              </>
+            )}
             <span aria-hidden="true">·</span>
             <span className={isDownloaded ? 'font-semibold text-teal-700' : 'text-amber-700'}>
               {isDownloaded ? 'Available Offline (IndexedDB)' : 'Online Only — Not Downloaded'}
@@ -221,7 +233,7 @@ export const StudentLessonsView: React.FC = () => {
                 <h2 className="text-lg font-semibold text-slate-900">
                   {pickLocalized(section.heading, language)}
                 </h2>
-                <p className="text-[15px] leading-relaxed text-slate-700">
+                <p className="whitespace-pre-line text-[15px] leading-relaxed text-slate-700">
                   {pickLocalized(section.body, language)}
                 </p>
                 {section.keyTakeaway && (
@@ -359,9 +371,23 @@ export const StudentLessonsView: React.FC = () => {
                     <span aria-hidden="true">·</span>
                     <span>Grade {lesson.grade}</span>
                     <span aria-hidden="true">·</span>
+                    <span>{pickLocalized(lesson.topic, language)}</span>
+                    <span aria-hidden="true">·</span>
                     <span className="tabular-nums">{lesson.estimatedMinutes} min</span>
                     <span aria-hidden="true">·</span>
                     <span className="tabular-nums">{lesson.sizeKB} KB</span>
+                    {lesson.authoredLanguage && (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <span>
+                          {lesson.authoredLanguage === 'en'
+                            ? 'English'
+                            : lesson.authoredLanguage === 'kn'
+                              ? 'ಕನ್ನಡ'
+                              : 'हिन्दी'}
+                        </span>
+                      </>
+                    )}
                     <span aria-hidden="true">·</span>
                     <span
                       className={`font-medium ${
