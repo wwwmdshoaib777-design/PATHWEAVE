@@ -13,6 +13,8 @@ import {
 } from '../../types/domain';
 import { getTopicDefinition, normalizeTopicKey } from './adaptiveQuestionBank';
 
+export const MIN_QUESTIONS_FOR_ADAPTIVE_EVAL = 2;
+
 const DIFFICULTY_ORDER: DifficultyLevel[] = ['Easy', 'Medium', 'Hard'];
 
 function stepUpDifficulty(current: DifficultyLevel): DifficultyLevel {
@@ -151,14 +153,18 @@ export function analyzeStudentTopicPerformance(
         ? Math.round((acc.correctAnswers / acc.totalQuestionsAttempted) * 100)
         : 0;
 
+    const firstSnapshot = acc.attemptHistory[0];
     const latestSnapshot = acc.attemptHistory[acc.attemptHistory.length - 1];
     const previousSnapshot =
       acc.attemptHistory.length >= 2 ? acc.attemptHistory[acc.attemptHistory.length - 2] : null;
 
+    const firstAccuracyPercent = firstSnapshot.accuracyPercent;
     const recentAccuracyPercent = latestSnapshot.accuracyPercent;
     const previousAccuracyPercent = previousSnapshot ? previousSnapshot.accuracyPercent : null;
     const improvementDelta =
       previousAccuracyPercent !== null ? recentAccuracyPercent - previousAccuracyPercent : null;
+    const netImprovementDelta =
+      acc.attemptHistory.length >= 2 ? recentAccuracyPercent - firstAccuracyPercent : null;
 
     let trend: TopicPerformanceAnalysis['trend'] = 'insufficient_data';
     if (acc.attemptHistory.length >= 2 && improvementDelta !== null) {
@@ -179,6 +185,8 @@ export function analyzeStudentTopicPerformance(
 
     const difficultyProgression = acc.attemptHistory.map((s) => s.difficultyUsed);
     const currentDifficulty = latestSnapshot.difficultyUsed;
+    const meetsMinimumQuestionThreshold =
+      acc.totalQuestionsAttempted >= MIN_QUESTIONS_FOR_ADAPTIVE_EVAL;
 
     analyses.push({
       studentId,
@@ -191,13 +199,16 @@ export function analyzeStudentTopicPerformance(
       accuracyPercent,
       recentAccuracyPercent,
       previousAccuracyPercent,
+      firstAccuracyPercent,
       improvementDelta,
+      netImprovementDelta,
       trend,
       attemptCount: acc.attemptHistory.length,
       attemptHistory: acc.attemptHistory,
       consecutiveMistakes,
       currentDifficulty,
       difficultyProgression,
+      meetsMinimumQuestionThreshold,
       lastPracticedAt: acc.lastPracticedAt,
     });
   }
@@ -380,8 +391,8 @@ export function evaluateTopicRecommendation(
   let isWeakTopic = false;
   let needsPrerequisiteRevision = false;
 
-  // Rule 1: Guard against changing difficulty on a single question
-  if (analysis.totalQuestionsAttempted < 2) {
+  // Rule 1: Guard against changing difficulty or flagging weak on fewer than MIN_QUESTIONS_FOR_ADAPTIVE_EVAL
+  if (!analysis.meetsMinimumQuestionThreshold) {
     recommendedDifficulty = currentDiff;
     ruleApplied = 'insufficient_evidence_hold';
     isWeakTopic = false;
@@ -468,6 +479,7 @@ export function evaluateTopicRecommendation(
     previousDifficulty: currentDiff,
     difficultyProgression: [...analysis.difficultyProgression, recommendedDifficulty],
     isWeakTopic,
+    meetsMinimumQuestionThreshold: analysis.meetsMinimumQuestionThreshold,
     needsPrerequisiteRevision,
     prerequisiteTopicKey: needsPrerequisiteRevision ? def?.prerequisiteTopicKey : undefined,
     prerequisiteTopicLabel: needsPrerequisiteRevision ? def?.prerequisiteTopicLabel : undefined,
@@ -476,7 +488,9 @@ export function evaluateTopicRecommendation(
     suggestedQuestionIds: suggestedQuestions.map((q) => q.id),
     previousAccuracyPercent: analysis.previousAccuracyPercent ?? analysis.recentAccuracyPercent,
     recentAccuracyPercent: analysis.recentAccuracyPercent,
+    cumulativeAccuracyPercent: analysis.accuracyPercent,
     improvementDelta: analysis.improvementDelta,
+    netImprovementDelta: analysis.netImprovementDelta,
     attemptCount: analysis.attemptCount,
     questionsAttempted: analysis.totalQuestionsAttempted,
     correctAnswers: analysis.correctAnswers,
@@ -570,7 +584,12 @@ export function buildTeacherAdaptiveOverview(
     topicKey: string;
     topicLabel: LocalizedText;
     studentsPracticed: number;
+    evaluatedStudentsCount: number;
+    insufficientDataStudentCount: number;
     weakStudentCount: number;
+    totalQuestionsAttempted: number;
+    totalCorrectAnswers: number;
+    cumulativeAccuracyPercent: number;
     averageRecentAccuracy: number;
     averageImprovementDelta: number | null;
     prerequisiteCount: number;
@@ -578,9 +597,14 @@ export function buildTeacherAdaptiveOverview(
 } {
   const studentRows: StudentAdaptiveOverviewRow[] = [];
   const topicRecsAll: AdaptiveRecommendationRecord[] = [];
+  const topicAnalysesAll: TopicPerformanceAnalysis[] = [];
 
   for (const student of studentsRoster) {
-    const studentAttempts = allAttempts.filter((a) => a.studentId === student.id);
+    const studentAttempts = allAttempts
+      .filter((a) => a.studentId === student.id)
+      .slice()
+      .sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
+
     if (studentAttempts.length === 0) {
       studentRows.push({
         studentId: student.id,
@@ -590,10 +614,13 @@ export function buildTeacherAdaptiveOverview(
         hasLiveAdaptiveData: false,
         attemptsCount: 0,
         weakTopics: [],
+        insufficientDataTopics: [],
         recommendedRevisionTopics: [],
         difficultyProgressions: [],
         overallImprovementDelta: null,
+        chronologicalQuizImprovementDelta: null,
         latestAccuracyPercent: null,
+        cumulativeAccuracyPercent: null,
         sampleBaselineWeakTopics: student.weakTopics,
       });
       continue;
@@ -605,10 +632,20 @@ export function buildTeacherAdaptiveOverview(
       questionBank
     );
     topicRecsAll.push(...recommendations);
+    topicAnalysesAll.push(...analyses);
 
     const weakTopics = recommendations
       .filter((r) => r.isWeakTopic)
       .map((r) => r.topicLabel.en);
+
+    const insufficientDataTopics = analyses
+      .filter((a) => !a.meetsMinimumQuestionThreshold)
+      .map((a) => ({
+        topicKey: a.topicKey,
+        topicLabel: a.topicLabel.en,
+        questionsAttempted: a.totalQuestionsAttempted,
+        latestAccuracyPercent: a.recentAccuracyPercent,
+      }));
 
     const revisionSet = new Set<string>();
     for (const r of recommendations) {
@@ -625,9 +662,17 @@ export function buildTeacherAdaptiveOverview(
     const overallImprovementDelta =
       deltas.length > 0 ? Math.round(deltas.reduce((s, d) => s + d, 0) / deltas.length) : null;
 
-    const sortedAttempts = studentAttempts
-      .slice()
-      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    const latestAttempt = studentAttempts[studentAttempts.length - 1];
+    const previousAttempt =
+      studentAttempts.length >= 2 ? studentAttempts[studentAttempts.length - 2] : null;
+    const chronologicalQuizImprovementDelta = previousAttempt
+      ? latestAttempt.percentage - previousAttempt.percentage
+      : null;
+
+    const totalCorrect = studentAttempts.reduce((sum, a) => sum + a.score, 0);
+    const totalQuestions = studentAttempts.reduce((sum, a) => sum + a.totalQuestions, 0);
+    const cumulativeAccuracyPercent =
+      totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null;
 
     studentRows.push({
       studentId: student.id,
@@ -637,15 +682,31 @@ export function buildTeacherAdaptiveOverview(
       hasLiveAdaptiveData: true,
       attemptsCount: studentAttempts.length,
       weakTopics,
+      insufficientDataTopics,
       recommendedRevisionTopics: Array.from(revisionSet),
-      difficultyProgressions: recommendations.map((r) => ({
-        topicKey: r.topicKey,
-        topicLabel: r.topicLabel.en,
-        progression: r.difficultyProgression,
-        currentRecommended: r.recommendedDifficulty,
-      })),
+      difficultyProgressions: recommendations.map((r) => {
+        const matchedAnalysis = analyses.find((a) => a.topicKey === r.topicKey);
+        return {
+          topicKey: r.topicKey,
+          topicLabel: r.topicLabel.en,
+          progression: r.difficultyProgression,
+          currentRecommended: r.recommendedDifficulty,
+          attemptAccuracies:
+            matchedAnalysis?.attemptHistory.map((h) => h.accuracyPercent) ?? [
+              r.recentAccuracyPercent,
+            ],
+          latestAccuracyPercent: r.recentAccuracyPercent,
+          cumulativeAccuracyPercent: r.cumulativeAccuracyPercent,
+          improvementDelta: r.improvementDelta,
+          netImprovementDelta: r.netImprovementDelta,
+          questionsAttempted: r.questionsAttempted,
+          meetsMinThreshold: r.meetsMinimumQuestionThreshold,
+        };
+      }),
       overallImprovementDelta,
-      latestAccuracyPercent: sortedAttempts[0]?.percentage ?? null,
+      chronologicalQuizImprovementDelta,
+      latestAccuracyPercent: latestAttempt.percentage,
+      cumulativeAccuracyPercent,
       sampleBaselineWeakTopics: student.weakTopics,
     });
   }
@@ -655,6 +716,7 @@ export function buildTeacherAdaptiveOverview(
     {
       topicLabel: LocalizedText;
       recs: AdaptiveRecommendationRecord[];
+      analyses: TopicPerformanceAnalysis[];
     }
   >();
 
@@ -662,34 +724,67 @@ export function buildTeacherAdaptiveOverview(
     const existing = byTopic.get(rec.topicKey) ?? {
       topicLabel: rec.topicLabel,
       recs: [],
+      analyses: [],
     };
     existing.recs.push(rec);
     byTopic.set(rec.topicKey, existing);
+  }
+  for (const analysis of topicAnalysesAll) {
+    const existing = byTopic.get(analysis.topicKey);
+    if (existing) {
+      existing.analyses.push(analysis);
+    }
   }
 
   const topicSummaries = Array.from(byTopic.entries())
     .map(([topicKey, entry]) => {
       const n = entry.recs.length;
-      const avgAcc = Math.round(
+      const avgRecent = Math.round(
         entry.recs.reduce((sum, r) => sum + r.recentAccuracyPercent, 0) / n
       );
+      const totalQuestionsAttempted = entry.analyses.reduce(
+        (sum, a) => sum + a.totalQuestionsAttempted,
+        0
+      );
+      const totalCorrectAnswers = entry.analyses.reduce((sum, a) => sum + a.correctAnswers, 0);
+      const cumulativeAccuracyPercent =
+        totalQuestionsAttempted > 0
+          ? Math.round((totalCorrectAnswers / totalQuestionsAttempted) * 100)
+          : avgRecent;
+
       const deltas = entry.recs
         .map((r) => r.improvementDelta)
         .filter((d): d is number => d !== null);
       const avgDelta =
         deltas.length > 0 ? Math.round(deltas.reduce((s, d) => s + d, 0) / deltas.length) : null;
 
+      const evaluatedStudentsCount = entry.recs.filter(
+        (r) => r.meetsMinimumQuestionThreshold
+      ).length;
+      const insufficientDataStudentCount = n - evaluatedStudentsCount;
+
       return {
         topicKey,
         topicLabel: entry.topicLabel,
         studentsPracticed: n,
+        evaluatedStudentsCount,
+        insufficientDataStudentCount,
         weakStudentCount: entry.recs.filter((r) => r.isWeakTopic).length,
-        averageRecentAccuracy: avgAcc,
+        totalQuestionsAttempted,
+        totalCorrectAnswers,
+        cumulativeAccuracyPercent,
+        averageRecentAccuracy: avgRecent,
         averageImprovementDelta: avgDelta,
         prerequisiteCount: entry.recs.filter((r) => r.needsPrerequisiteRevision).length,
       };
     })
-    .sort((a, b) => a.averageRecentAccuracy - b.averageRecentAccuracy);
+    .sort((a, b) => {
+      // Evaluated weak/low topics first, then below-threshold topics
+      if (a.evaluatedStudentsCount > 0 !== b.evaluatedStudentsCount > 0) {
+        return a.evaluatedStudentsCount > 0 ? -1 : 1;
+      }
+      return a.cumulativeAccuracyPercent - b.cumulativeAccuracyPercent;
+    });
 
   return { studentRows, topicSummaries };
 }

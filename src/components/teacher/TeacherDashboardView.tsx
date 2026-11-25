@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Compass, RefreshCcw, Users, Wifi, WifiOff } from 'lucide-react';
 import { usePathweave } from '../../context/PathweaveContext';
+import { MIN_QUESTIONS_FOR_ADAPTIVE_EVAL } from '../../modules/adaptive/adaptiveEngine';
 import { pickLocalized } from '../../modules/i18n/translations';
 import { progressService } from '../../modules/progress/progressService';
 
@@ -20,34 +21,31 @@ export const TeacherDashboardView: React.FC = () => {
     setTeacherTab,
   } = usePathweave();
 
-  const studentScores = studentsRoster.map((student) => {
-    const liveAttempts = allQuizAttempts.filter((a) => a.studentId === student.id);
-    const liveAvg =
-      liveAttempts.length > 0
-        ? Math.round(
-            liveAttempts.reduce((sum, a) => sum + a.percentage, 0) / liveAttempts.length
-          )
-        : null;
-    return {
-      student,
-      liveAttemptsCount: liveAttempts.length,
-      effectiveScore: liveAvg ?? student.averageScore,
-      hasLiveScore: liveAvg !== null,
-    };
-  });
-
-  const scoredStudents = studentScores.filter((s) => s.hasLiveScore || s.student.averageScore > 0);
-  const classAverage =
-    scoredStudents.length > 0
-      ? Math.round(
-          scoredStudents.reduce((sum, s) => sum + s.effectiveScore, 0) / scoredStudents.length
-        )
-      : 0;
-
-  const weakAreas = progressService.computeTopicWeakAreas(studentsRoster, allQuizAttempts);
   const liveAdaptiveStudents = teacherAdaptiveOverview.studentRows.filter(
     (r) => r.hasLiveAdaptiveData
   );
+  const sampleBaselineStudents = teacherAdaptiveOverview.studentRows.filter(
+    (r) => !r.hasLiveAdaptiveData
+  );
+
+  // Live class average uses strictly actual IndexedDB attempts when present (never mixed with sample scores)
+  const liveTotalCorrect = allQuizAttempts.reduce((sum, a) => sum + a.score, 0);
+  const liveTotalQuestions = allQuizAttempts.reduce((sum, a) => sum + a.totalQuestions, 0);
+  const liveClassAverage =
+    liveTotalQuestions > 0 ? Math.round((liveTotalCorrect / liveTotalQuestions) * 100) : null;
+
+  const sampleBaselineAverage =
+    studentsRoster.filter((s) => s.origin === 'sample').length > 0
+      ? Math.round(
+          studentsRoster
+            .filter((s) => s.origin === 'sample')
+            .reduce((sum, s) => sum + s.averageScore, 0) /
+            studentsRoster.filter((s) => s.origin === 'sample').length
+        )
+      : 0;
+
+  const liveWeakAreas = progressService.computeLiveTopicWeakAreas(allQuizAttempts);
+  const sampleWeakAreas = progressService.computeSampleRosterWeakAreas(studentsRoster);
 
   return (
     <div className="space-y-8">
@@ -110,10 +108,12 @@ export const TeacherDashboardView: React.FC = () => {
 
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="text-xs font-medium text-slate-500">
-            {messages.teacher.classAverageScore}
+            {liveClassAverage !== null
+              ? 'Live Cumulative Avg (IndexedDB)'
+              : `${messages.teacher.classAverageScore} (Sample)`}
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
-            {classAverage}%
+            {liveClassAverage !== null ? `${liveClassAverage}%` : `${sampleBaselineAverage}%`}
           </div>
         </div>
 
@@ -127,7 +127,7 @@ export const TeacherDashboardView: React.FC = () => {
         </div>
       </section>
 
-      {/* Adaptive Learning Overview (Live IndexedDB Analytics) */}
+      {/* Adaptive Learning Overview (Live IndexedDB Analytics Only) */}
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -150,13 +150,16 @@ export const TeacherDashboardView: React.FC = () => {
         {liveAdaptiveStudents.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             No live student quiz attempts saved in IndexedDB yet. Switch to Student Mode and submit
-            a quiz to inspect real-time adaptive weak topics, difficulty progressions, and attempt
-            improvements here.
+            a quiz to inspect real-time adaptive weak topics, difficulty progressions, and
+            chronological improvements here.
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
             {liveAdaptiveStudents.map((row) => (
-              <div key={row.studentId} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={row.studentId}
+                className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0 space-y-0.5">
                   <div className="text-sm font-medium text-slate-900">
                     {row.studentName}{' '}
@@ -169,6 +172,16 @@ export const TeacherDashboardView: React.FC = () => {
                     <span className="font-medium text-amber-900">
                       {row.weakTopics.length > 0 ? row.weakTopics.join(', ') : 'None flagged'}
                     </span>
+                    {row.insufficientDataTopics.length > 0 && (
+                      <>
+                        {' · '}Below {MIN_QUESTIONS_FOR_ADAPTIVE_EVAL} Qs:{' '}
+                        <span className="text-slate-500">
+                          {row.insufficientDataTopics
+                            .map((t) => `${t.topicLabel} (${t.latestAccuracyPercent}%, ${t.questionsAttempted} Q)`)
+                            .join(', ')}
+                        </span>
+                      </>
+                    )}
                     {row.recommendedRevisionTopics.length > 0 && (
                       <>
                         {' · '}Revise:{' '}
@@ -185,20 +198,27 @@ export const TeacherDashboardView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 font-mono text-xs tabular-nums">
+                <div className="flex flex-wrap items-center gap-4 shrink-0 font-mono text-xs tabular-nums">
+                  {row.cumulativeAccuracyPercent !== null && (
+                    <span className="text-slate-700">
+                      Cumulative: {row.cumulativeAccuracyPercent}%
+                    </span>
+                  )}
                   {row.latestAccuracyPercent !== null && (
                     <span className="font-semibold text-slate-900">
                       Latest: {row.latestAccuracyPercent}%
                     </span>
                   )}
-                  {row.overallImprovementDelta !== null && (
+                  {row.chronologicalQuizImprovementDelta !== null && (
                     <span
                       className={`font-semibold ${
-                        row.overallImprovementDelta >= 0 ? 'text-emerald-700' : 'text-amber-800'
+                        row.chronologicalQuizImprovementDelta >= 0
+                          ? 'text-emerald-700'
+                          : 'text-amber-800'
                       }`}
                     >
-                      {row.overallImprovementDelta >= 0 ? '+' : ''}
-                      {row.overallImprovementDelta}% trend
+                      {row.chronologicalQuizImprovementDelta >= 0 ? '+' : ''}
+                      {row.chronologicalQuizImprovementDelta}% (latest vs prev)
                     </span>
                   )}
                 </div>
@@ -208,7 +228,7 @@ export const TeacherDashboardView: React.FC = () => {
         )}
       </section>
 
-      {/* Student Performance & Topic-wise Weak Areas */}
+      {/* Live vs Sample Separated Overview */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
@@ -217,7 +237,9 @@ export const TeacherDashboardView: React.FC = () => {
                 {messages.teacher.performanceOverview}
               </h2>
               <p className="text-xs text-slate-500">
-                Live IndexedDB quiz averages merged with sample classroom baselines
+                {liveAdaptiveStudents.length > 0
+                  ? 'Live IndexedDB student averages shown first; static sample baselines labeled'
+                  : messages.sampleDataNotice}
               </p>
             </div>
             <button
@@ -231,22 +253,46 @@ export const TeacherDashboardView: React.FC = () => {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {studentScores.slice(0, 5).map(({ student, liveAttemptsCount, effectiveScore, hasLiveScore }) => (
-              <div key={student.id} className="py-3 flex items-center justify-between gap-3">
+            {liveAdaptiveStudents.map((row) => (
+              <div key={row.studentId} className="py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-slate-900">{student.name}</div>
-                  <div className="text-xs text-slate-500 tabular-nums">
-                    Grade {student.grade} ·{' '}
-                    {hasLiveScore
-                      ? `${liveAttemptsCount} live IndexedDB attempt(s)`
-                      : `${student.lessonsCompleted} sample lessons`}
+                  <div className="truncate text-sm font-medium text-slate-900">
+                    {row.studentName}
+                  </div>
+                  <div className="text-xs text-teal-800 tabular-nums">
+                    Live IndexedDB · {row.attemptsCount} attempt(s) · Latest{' '}
+                    {row.latestAccuracyPercent}%
                   </div>
                 </div>
                 <div className="font-mono text-sm font-semibold text-slate-900 tabular-nums">
-                  {hasLiveScore || student.averageScore > 0 ? `${effectiveScore}%` : 'New'}
+                  {row.cumulativeAccuracyPercent}% cum
                 </div>
               </div>
             ))}
+
+            {sampleBaselineStudents
+              .slice(0, Math.max(0, 5 - liveAdaptiveStudents.length))
+              .map((row) => {
+                const rosterEntry = studentsRoster.find((s) => s.id === row.studentId);
+                return (
+                  <div key={row.studentId} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-900">
+                        {row.studentName}
+                      </div>
+                      <div className="text-xs text-slate-500 tabular-nums">
+                        Sample baseline · Grade {row.grade} · {rosterEntry?.lessonsCompleted ?? 0}{' '}
+                        lessons
+                      </div>
+                    </div>
+                    <div className="font-mono text-sm font-semibold text-slate-600 tabular-nums">
+                      {rosterEntry && rosterEntry.averageScore > 0
+                        ? `${rosterEntry.averageScore}%`
+                        : 'New'}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </section>
 
@@ -257,7 +303,9 @@ export const TeacherDashboardView: React.FC = () => {
                 {messages.teacher.weakAreasTitle}
               </h2>
               <p className="text-xs text-slate-500">
-                Aggregated from sample roster and local quiz attempts
+                {liveWeakAreas.length > 0
+                  ? `Live IndexedDB topic accuracy (min ${MIN_QUESTIONS_FOR_ADAPTIVE_EVAL} Qs to flag weak)`
+                  : 'Static sample classroom baseline (no live attempts yet)'}
               </p>
             </div>
             <button
@@ -271,25 +319,43 @@ export const TeacherDashboardView: React.FC = () => {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {weakAreas.slice(0, 5).map((area) => (
-              <div key={area.topicName} className="py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-slate-900">
-                    {area.topicName}
+            {liveWeakAreas.length > 0
+              ? liveWeakAreas.slice(0, 5).map((area) => (
+                  <div key={area.topicKey} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-900">
+                        {area.topicName}
+                      </div>
+                      <div className="text-xs text-slate-500 tabular-nums">
+                        {area.meetsMinThreshold
+                          ? area.isWeak
+                            ? `Live IndexedDB · Weak (<50% across ${area.questionsAttempted} Qs)`
+                            : `Live IndexedDB · Evaluated (${area.questionsAttempted} Qs)`
+                          : `Live IndexedDB · Below min ${MIN_QUESTIONS_FOR_ADAPTIVE_EVAL} Qs (${area.questionsAttempted} Q)`}
+                      </div>
+                    </div>
+                    <div
+                      className={`font-mono text-xs font-semibold tabular-nums shrink-0 ${
+                        area.isWeak ? 'text-amber-800' : 'text-slate-700'
+                      }`}
+                    >
+                      {area.cumulativeAccuracyPercent}% cum
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500">
-                    {area.source === 'quiz_attempts'
-                      ? 'Includes live local quiz attempts'
-                      : 'Sample classroom baseline'}
+                ))
+              : sampleWeakAreas.slice(0, 5).map((area) => (
+                  <div key={area.topicName} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-900">
+                        {area.topicName}
+                      </div>
+                      <div className="text-xs text-slate-500">Sample classroom baseline</div>
+                    </div>
+                    <div className="font-mono text-xs font-semibold text-slate-600 tabular-nums shrink-0">
+                      {area.occurrences} student(s)
+                    </div>
                   </div>
-                </div>
-                <div className="font-mono text-xs font-semibold text-amber-800 tabular-nums shrink-0">
-                  {area.accuracyPercent !== null
-                    ? `${area.accuracyPercent}% accuracy`
-                    : `${area.occurrences} student(s)`}
-                </div>
-              </div>
-            ))}
+                ))}
           </div>
         </section>
       </div>

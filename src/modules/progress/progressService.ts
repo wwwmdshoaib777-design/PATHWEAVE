@@ -160,6 +160,79 @@ class ProgressService {
     });
   }
 
+  /**
+   * Computes weak topics strictly from live IndexedDB quizAttempts (no sample roster mixing)
+   * and enforces the same minimum-question threshold (>= 2 questions) as the adaptive engine.
+   */
+  computeLiveTopicWeakAreas(attempts: QuizAttemptRecord[]): Array<{
+    topicKey: string;
+    topicName: string;
+    questionsAttempted: number;
+    correctCount: number;
+    cumulativeAccuracyPercent: number;
+    meetsMinThreshold: boolean;
+    isWeak: boolean;
+  }> {
+    const topicMap = new Map<
+      string,
+      { topicName: string; total: number; correct: number }
+    >();
+
+    for (const attempt of attempts) {
+      for (const item of attempt.topicResults) {
+        const normalizedKey = normalizeTopicKey(item.topicKey);
+        const def = getTopicDefinition(normalizedKey);
+        const topicName = def?.label.en ?? item.topicLabel.en;
+        const entry = topicMap.get(normalizedKey) ?? { topicName, total: 0, correct: 0 };
+        entry.total += 1;
+        if (item.correct) entry.correct += 1;
+        topicMap.set(normalizedKey, entry);
+      }
+    }
+
+    return Array.from(topicMap.entries())
+      .map(([topicKey, stats]) => {
+        const cumulativeAccuracyPercent =
+          stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+        const meetsMinThreshold = stats.total >= 2;
+        return {
+          topicKey,
+          topicName: stats.topicName,
+          questionsAttempted: stats.total,
+          correctCount: stats.correct,
+          cumulativeAccuracyPercent,
+          meetsMinThreshold,
+          isWeak: meetsMinThreshold && cumulativeAccuracyPercent < 50,
+        };
+      })
+      .sort((a, b) => {
+        if (a.meetsMinThreshold !== b.meetsMinThreshold) {
+          return a.meetsMinThreshold ? -1 : 1;
+        }
+        return a.cumulativeAccuracyPercent - b.cumulativeAccuracyPercent;
+      });
+  }
+
+  /**
+   * Static sample classroom roster baseline only (never mixed with live IndexedDB attempts).
+   */
+  computeSampleRosterWeakAreas(students: StudentRosterRecord[]): Array<{
+    topicName: string;
+    occurrences: number;
+  }> {
+    const counts = new Map<string, number>();
+    for (const student of students) {
+      if (student.origin !== 'sample') continue;
+      for (const topic of student.weakTopics) {
+        const normalizedName = topic === 'Area & Perimeter' ? 'Geometry' : topic;
+        counts.set(normalizedName, (counts.get(normalizedName) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .map(([topicName, occurrences]) => ({ topicName, occurrences }))
+      .sort((a, b) => b.occurrences - a.occurrences);
+  }
+
   computeTopicWeakAreas(
     students: StudentRosterRecord[],
     attempts: QuizAttemptRecord[]

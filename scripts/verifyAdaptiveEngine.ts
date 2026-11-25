@@ -402,6 +402,90 @@ async function runTests() {
   assert.equal(chinmayiRow.hasLiveAdaptiveData, true);
   assert.ok(chinmayiRow.weakTopics.includes('Linear Equations'));
   assert.equal(meenaRow.hasLiveAdaptiveData, false, 'Meena has 0 live attempts -> sample baseline only');
+  assert.equal(meenaRow.weakTopics.length, 0, 'Sample baseline must never populate live weakTopics');
+
+  // Teacher Consistency Audit:
+  // 1) Fractions 1/3 (33%) then 1/2 (50%) -> Latest = 50%, Cumulative = 2/5 = 40%
+  // 2) Geometry 0/1 (0%) -> not flagged weak (insufficientDataTopics, min 2 Qs)
+  // 3) Out-of-order submittedAt timestamps still compute chronological delta accurately
+  const { progressService } = await import('../src/modules/progress/progressService');
+  const auditStudentId = 'student-audit-09';
+  const auditRoster = [
+    ...SAMPLE_STUDENT_ROSTER,
+    {
+      id: auditStudentId,
+      name: 'Audit Student',
+      grade: 7,
+      preferredLanguage: 'en' as const,
+      lessonsCompleted: 0,
+      averageScore: 0,
+      weakTopics: ['Water Conservation'], // sample-like field that must NOT affect live engine
+      lastActiveAt: '2026-11-24T00:00:00.000Z',
+      origin: 'local' as const,
+    },
+  ];
+  const auditAttempts = [
+    // Intentionally insert newer attempt FIRST to verify chronological sorting
+    {
+      id: 'audit-att-2',
+      quizId: 'adaptive-fractions-easy',
+      subjectId: 'math' as const,
+      studentId: auditStudentId,
+      score: 1,
+      totalQuestions: 2,
+      percentage: 50,
+      answers: {},
+      submittedAt: '2026-11-25T10:00:00.000Z',
+      topicResults: [
+        { questionId: 'aq-frac-e1', topicKey: 'fractions', topicLabel: { en: 'Fractions & Decimals', kn: '', hi: '' }, difficulty: 'Easy' as const, correct: true },
+        { questionId: 'aq-frac-e2', topicKey: 'fractions', topicLabel: { en: 'Fractions & Decimals', kn: '', hi: '' }, difficulty: 'Easy' as const, correct: false },
+      ],
+    },
+    {
+      id: 'audit-att-1',
+      quizId: 'quiz-math-fractions',
+      subjectId: 'math' as const,
+      studentId: auditStudentId,
+      score: 1,
+      totalQuestions: 4,
+      percentage: 25,
+      answers: {},
+      submittedAt: '2026-11-25T09:00:00.000Z',
+      topicResults: [
+        { questionId: 'q-m-1', topicKey: 'fractions', topicLabel: { en: 'Fractions & Decimals', kn: '', hi: '' }, difficulty: 'Easy' as const, correct: true },
+        { questionId: 'q-m-2', topicKey: 'fractions', topicLabel: { en: 'Fractions & Decimals', kn: '', hi: '' }, difficulty: 'Medium' as const, correct: false },
+        { questionId: 'aq-frac-m1', topicKey: 'fractions', topicLabel: { en: 'Fractions & Decimals', kn: '', hi: '' }, difficulty: 'Medium' as const, correct: false },
+        // 1 Geometry question answered wrong -> 0% on 1 Q (< 2 Q threshold)
+        { questionId: 'q-m-4', topicKey: 'geometry', topicLabel: { en: 'Geometry', kn: '', hi: '' }, difficulty: 'Medium' as const, correct: false },
+      ],
+    },
+  ];
+
+  const auditOverview = buildTeacherAdaptiveOverview(auditRoster, auditAttempts, storedQuestions);
+  const auditFracTopic = auditOverview.topicSummaries.find((t) => t.topicKey === 'fractions')!;
+  const auditGeoTopic = auditOverview.topicSummaries.find((t) => t.topicKey === 'geometry')!;
+  const auditRow = auditOverview.studentRows.find((r) => r.studentId === auditStudentId)!;
+
+  assert.equal(auditFracTopic.averageRecentAccuracy, 50, 'Latest attempt accuracy must be 50%');
+  assert.equal(auditFracTopic.cumulativeAccuracyPercent, 40, 'Cumulative accuracy across 2/5 Qs must be 40%');
+  assert.equal(auditFracTopic.averageImprovementDelta, 17, 'Chronological 33% -> 50% delta must be +17%');
+  assert.equal(auditRow.chronologicalQuizImprovementDelta, 25, 'Chronological 25% -> 50% quiz delta must be +25%');
+
+  assert.equal(auditGeoTopic.cumulativeAccuracyPercent, 0);
+  assert.equal(auditGeoTopic.weakStudentCount, 0, '0% on 1 Q must NOT be flagged weak');
+  assert.equal(auditGeoTopic.insufficientDataStudentCount, 1);
+  assert.equal(auditRow.insufficientDataTopics.length, 1);
+  assert.equal(auditRow.insufficientDataTopics[0].topicKey, 'geometry');
+
+  const liveWeakAudit = progressService.computeLiveTopicWeakAreas(auditAttempts);
+  const liveGeoWeak = liveWeakAudit.find((w) => w.topicKey === 'geometry')!;
+  assert.equal(liveGeoWeak.meetsMinThreshold, false);
+  assert.equal(liveGeoWeak.isWeak, false, 'computeLiveTopicWeakAreas must share min 2-Q threshold');
+  assert.equal(
+    liveWeakAudit.some((w) => w.topicName === 'Water Conservation'),
+    false,
+    'Sample roster weak topics must never leak into liveWeakAreas'
+  );
 
   // Verify deterministic repeatability (running compute twice yields identical output)
   const passA = computeStudentAdaptiveRecommendations(
@@ -422,11 +506,14 @@ async function runTests() {
   const geoAnalysis = chinmayiAnalyses.find((a) => a.topicKey === 'geometry')!;
   assert.ok(geoAnalysis.attemptCount >= 5);
 
-  console.log('ALL STAGE 3 VERIFICATION TESTS PASSED');
+  console.log('ALL STAGE 3 & TEACHER DASHBOARD CONSISTENCY TESTS PASSED');
   console.log(`- Stored questions verified: ${storedQuestions.length}`);
   console.log(`- Chinmayi Geometry progression: ${geoAnalysis.difficultyProgression.join(' -> ')}`);
   console.log(
-    `- Chinmayi Linear Equations rule: ${linearRec.ruleApplied} -> prereq: ${linearRec.prerequisiteTopicKey}`
+    `- Audit Fractions: Latest=${auditFracTopic.averageRecentAccuracy}%, Cumulative=${auditFracTopic.cumulativeAccuracyPercent}%`
+  );
+  console.log(
+    `- Audit Geometry 0% (1 Q): weakStudentCount=${auditGeoTopic.weakStudentCount}, insufficientData=${auditGeoTopic.insufficientDataStudentCount}`
   );
   console.log(`- Repeated mistakes rule verified: ${circuitsRec.ruleApplied}`);
   console.log(`- Karthik independent recommendations count: ${persistedKarthik.length}`);

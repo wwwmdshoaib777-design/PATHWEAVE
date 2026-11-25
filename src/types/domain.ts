@@ -154,13 +154,16 @@ export interface TopicPerformanceAnalysis {
   accuracyPercent: number;
   recentAccuracyPercent: number;
   previousAccuracyPercent: number | null;
+  firstAccuracyPercent: number;
   improvementDelta: number | null;
+  netImprovementDelta: number | null;
   trend: 'improving' | 'declining' | 'steady' | 'insufficient_data';
   attemptCount: number;
   attemptHistory: TopicAttemptSnapshot[];
   consecutiveMistakes: number;
   currentDifficulty: DifficultyLevel;
   difficultyProgression: DifficultyLevel[];
+  meetsMinimumQuestionThreshold: boolean;
   lastPracticedAt: string;
 }
 
@@ -183,6 +186,7 @@ export interface AdaptiveRecommendationRecord {
   previousDifficulty: DifficultyLevel;
   difficultyProgression: DifficultyLevel[];
   isWeakTopic: boolean;
+  meetsMinimumQuestionThreshold: boolean;
   needsPrerequisiteRevision: boolean;
   prerequisiteTopicKey?: string;
   prerequisiteTopicLabel?: LocalizedText;
@@ -191,7 +195,9 @@ export interface AdaptiveRecommendationRecord {
   suggestedQuestionIds: string[];
   previousAccuracyPercent: number;
   recentAccuracyPercent: number;
+  cumulativeAccuracyPercent: number;
   improvementDelta: number | null;
+  netImprovementDelta: number | null;
   attemptCount: number;
   questionsAttempted: number;
   correctAnswers: number;
@@ -209,15 +215,30 @@ export interface StudentAdaptiveOverviewRow {
   hasLiveAdaptiveData: boolean;
   attemptsCount: number;
   weakTopics: string[];
+  insufficientDataTopics: Array<{
+    topicKey: string;
+    topicLabel: string;
+    questionsAttempted: number;
+    latestAccuracyPercent: number;
+  }>;
   recommendedRevisionTopics: string[];
   difficultyProgressions: Array<{
     topicKey: string;
     topicLabel: string;
     progression: DifficultyLevel[];
     currentRecommended: DifficultyLevel;
+    attemptAccuracies: number[];
+    latestAccuracyPercent: number;
+    cumulativeAccuracyPercent: number;
+    improvementDelta: number | null;
+    netImprovementDelta: number | null;
+    questionsAttempted: number;
+    meetsMinThreshold: boolean;
   }>;
   overallImprovementDelta: number | null;
+  chronologicalQuizImprovementDelta: number | null;
   latestAccuracyPercent: number | null;
+  cumulativeAccuracyPercent: number | null;
   sampleBaselineWeakTopics: string[];
 }
 

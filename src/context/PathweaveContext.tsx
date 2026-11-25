@@ -53,7 +53,12 @@ interface TeacherAdaptiveOverviewState {
     topicKey: string;
     topicLabel: { en: string; kn: string; hi: string };
     studentsPracticed: number;
+    evaluatedStudentsCount: number;
+    insufficientDataStudentCount: number;
     weakStudentCount: number;
+    totalQuestionsAttempted: number;
+    totalCorrectAnswers: number;
+    cumulativeAccuracyPercent: number;
     averageRecentAccuracy: number;
     averageImprovementDelta: number | null;
     prerequisiteCount: number;
