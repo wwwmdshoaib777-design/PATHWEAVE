@@ -15,6 +15,7 @@ import { StudentSubjectsView } from './components/student/StudentSubjectsView';
 import { TeacherDashboardView } from './components/teacher/TeacherDashboardView';
 import { TeacherMaterialsView } from './components/teacher/TeacherMaterialsView';
 import { TeacherPerformanceView } from './components/teacher/TeacherPerformanceView';
+import { TeacherQuestionsView } from './components/teacher/TeacherQuestionsView';
 import { TeacherStudentsView } from './components/teacher/TeacherStudentsView';
 import { TeacherSyncView } from './components/teacher/TeacherSyncView';
 
@@ -54,6 +55,8 @@ const PathweaveRouter: React.FC = () => {
         return <TeacherStudentsView />;
       case 'materials':
         return <TeacherMaterialsView />;
+      case 'questions':
+        return <TeacherQuestionsView />;
       case 'performance':
         return <TeacherPerformanceView />;
       case 'synchronization':

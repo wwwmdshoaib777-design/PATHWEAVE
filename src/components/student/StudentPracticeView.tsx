@@ -269,7 +269,10 @@ export const StudentPracticeView: React.FC = () => {
                       <span className="font-semibold">
                         {isCorrect ? 'Correct: ' : `${messages.student.correctAnswer}: `}
                       </span>
-                      {pickLocalized(question.explanation, language)}
+                      {pickLocalized(question.explanation, language).trim() ||
+                        (question.options[question.correctIndex]
+                          ? pickLocalized(question.options[question.correctIndex], language)
+                          : '')}
                     </div>
                   )}
                 </fieldset>

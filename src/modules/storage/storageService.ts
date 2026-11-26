@@ -82,6 +82,9 @@ class StorageService {
       'packets',
     ];
     await Promise.all(userMutableStores.map((store) => adapter.clear(store)));
+    const allQuestions = await adapter.getAll<{ id: string; origin?: string }>('quizQuestions');
+    const localQuestions = allQuestions.filter((q) => q.origin === 'local');
+    await Promise.all(localQuestions.map((q) => adapter.delete('quizQuestions', q.id)));
   }
 
   async resetAllLocalData(): Promise<void> {

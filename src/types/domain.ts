@@ -76,6 +76,10 @@ export interface StoredQuizQuestion extends QuizQuestion {
   quizId: string;
   subjectId: SubjectId;
   orderIndex: number;
+  lessonId?: string;
+  origin?: DataOrigin;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Quiz {
@@ -294,6 +298,7 @@ export interface SyncQueueItem {
     | 'adaptive_recommendation'
     | 'student'
     | 'material'
+    | 'question'
     | 'packet';
   entityId: string;
   action: 'create' | 'update' | 'delete';
@@ -327,6 +332,7 @@ export type TeacherNavTab =
   | 'dashboard'
   | 'students'
   | 'materials'
+  | 'questions'
   | 'performance'
   | 'synchronization'
   | 'settings';

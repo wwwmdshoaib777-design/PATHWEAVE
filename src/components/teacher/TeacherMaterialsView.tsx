@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Download,
+  HelpCircle,
   PackagePlus,
   Pencil,
   Plus,
@@ -27,12 +28,14 @@ export const TeacherMaterialsView: React.FC = () => {
     language,
     messages,
     lessons,
+    allQuestions,
     learningPackets,
     createLocalLesson,
     updateLocalLesson,
     removeLocalLesson,
     createLearningPacket,
     exportPacketJson,
+    setTeacherTab,
   } = usePathweave();
 
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -109,6 +112,16 @@ export const TeacherMaterialsView: React.FC = () => {
     () => lessons.filter((l) => !lessonService.isSampleLessonId(l.id)).length,
     [lessons]
   );
+
+  const questionCountByLesson = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const q of allQuestions) {
+      if (q.lessonId) {
+        map.set(q.lessonId, (map.get(q.lessonId) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [allQuestions]);
 
   const resetLessonForm = () => {
     setEditingLessonId(null);
@@ -295,6 +308,15 @@ export const TeacherMaterialsView: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setTeacherTab('questions')}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 whitespace-nowrap shrink-0"
+          >
+            <HelpCircle className="h-4 w-4 text-teal-700" aria-hidden="true" />
+            {messages.nav.questions}
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -764,7 +786,10 @@ export const TeacherMaterialsView: React.FC = () => {
                           </div>
                           <div className="mt-0.5 text-xs text-slate-500">
                             {pickLocalized(lesson.topic, language)} · {authoredLangLabel} ·{' '}
-                            <span className="tabular-nums">{lesson.estimatedMinutes} min</span>
+                            <span className="tabular-nums">{lesson.estimatedMinutes} min</span> ·{' '}
+                            <span className="tabular-nums">
+                              {questionCountByLesson.get(lesson.id) ?? 0} Qs
+                            </span>
                           </div>
                         </td>
                         <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">

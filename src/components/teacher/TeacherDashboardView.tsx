@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Compass, RefreshCcw, Users, Wifi, WifiOff } from 'lucide-react';
+import { ArrowRight, Compass, HelpCircle, RefreshCcw, Users, Wifi, WifiOff } from 'lucide-react';
 import { usePathweave } from '../../context/PathweaveContext';
 import { MIN_QUESTIONS_FOR_ADAPTIVE_EVAL } from '../../modules/adaptive/adaptiveEngine';
 import { pickLocalized } from '../../modules/i18n/translations';
@@ -12,6 +12,7 @@ export const TeacherDashboardView: React.FC = () => {
     messages,
     subjects,
     lessons,
+    allQuestions,
     studentsRoster,
     allQuizAttempts,
     teacherAdaptiveOverview,
@@ -70,15 +71,23 @@ export const TeacherDashboardView: React.FC = () => {
             <button
               type="button"
               onClick={() => setTeacherTab('students')}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 whitespace-nowrap"
             >
               <Users className="h-3.5 w-3.5 text-teal-700" aria-hidden="true" />
               {messages.teacher.studentManagement}
             </button>
             <button
               type="button"
+              onClick={() => setTeacherTab('questions')}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 whitespace-nowrap tabular-nums"
+            >
+              <HelpCircle className="h-3.5 w-3.5 text-teal-700" aria-hidden="true" />
+              {messages.teacher.questionManagement} ({allQuestions.length})
+            </button>
+            <button
+              type="button"
               onClick={() => setTeacherTab('materials')}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-teal-800 whitespace-nowrap"
             >
               {messages.teacher.materialManagement}
             </button>

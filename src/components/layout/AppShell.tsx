@@ -8,6 +8,7 @@ import {
   FlaskConical,
   FolderKanban,
   GraduationCap,
+  HelpCircle,
   LayoutDashboard,
   Library,
   Menu,
@@ -71,6 +72,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       id: 'materials',
       label: messages.nav.learningMaterials,
       icon: <FolderKanban className="h-4 w-4" />,
+    },
+    {
+      id: 'questions',
+      label: messages.nav.questions,
+      icon: <HelpCircle className="h-4 w-4" />,
     },
     { id: 'performance', label: messages.nav.performance, icon: <BarChart3 className="h-4 w-4" /> },
     {

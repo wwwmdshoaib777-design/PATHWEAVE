@@ -39,7 +39,7 @@ import {
   usePWAInstall,
   useServiceWorkerManager,
 } from '../modules/pwa/pwaService';
-import { quizService } from '../modules/quiz/quizService';
+import { QuestionMutationInput, quizService } from '../modules/quiz/quizService';
 import { storageService } from '../modules/storage/storageService';
 import { StoreName } from '../modules/storage/StorageAdapter';
 import { SyncAttemptSummary, syncService } from '../modules/sync/syncService';
@@ -129,6 +129,9 @@ interface PathweaveContextValue {
   createLocalLesson: (input: CreateLocalLessonInput) => Promise<Lesson>;
   updateLocalLesson: (lessonId: string, input: UpdateLocalLessonInput) => Promise<Lesson>;
   removeLocalLesson: (lessonId: string) => Promise<void>;
+  createLocalQuestion: (input: QuestionMutationInput) => Promise<StoredQuizQuestion>;
+  updateLocalQuestion: (questionId: string, input: QuestionMutationInput) => Promise<StoredQuizQuestion>;
+  removeLocalQuestion: (questionId: string) => Promise<void>;
   createLearningPacket: (title: string, subjectId: SubjectId, lessonIds: string[]) => Promise<void>;
   exportPacketJson: (packet: LearningPacket) => void;
   resetLocalStorage: () => Promise<void>;
@@ -618,6 +621,86 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     [activeLessonId, language, lessons, refreshData, studentProfileId]
   );
 
+  const createLocalQuestion = useCallback(
+    async (input: QuestionMutationInput) => {
+      const question = await quizService.createLocalQuestion(input);
+      await progressService.logActivity({
+        actorRole: 'teacher',
+        actorName: roleService.getProfileForRole('teacher', language).name,
+        category: 'quiz',
+        description: {
+          en: `Created question in ${question.topicLabel.en}: ${question.prompt.en}`,
+          kn: `${question.topicLabel.kn} ವಿಷಯದಲ್ಲಿ ಹೊಸ ಪ್ರಶ್ನೆ ರಚಿಸಲಾಗಿದೆ`,
+          hi: `${question.topicLabel.hi} में नया प्रश्न बनाया गया`,
+        },
+      });
+      await syncService.enqueueLocalMutation({
+        entityType: 'question',
+        entityId: question.id,
+        action: 'create',
+        summary: `Created question (${question.topicLabel.en}): ${question.prompt.en}`,
+        payload: question,
+      });
+      await refreshData(studentProfileId);
+      return question;
+    },
+    [language, refreshData, studentProfileId]
+  );
+
+  const updateLocalQuestion = useCallback(
+    async (questionId: string, input: QuestionMutationInput) => {
+      const question = await quizService.updateLocalQuestion(questionId, input);
+      await progressService.logActivity({
+        actorRole: 'teacher',
+        actorName: roleService.getProfileForRole('teacher', language).name,
+        category: 'quiz',
+        description: {
+          en: `Updated question in ${question.topicLabel.en}: ${question.prompt.en}`,
+          kn: `${question.topicLabel.kn} ವಿಷಯದ ಪ್ರಶ್ನೆ ನವೀಕರಿಸಲಾಗಿದೆ`,
+          hi: `${question.topicLabel.hi} का प्रश्न अपडेट किया गया`,
+        },
+      });
+      await syncService.enqueueLocalMutation({
+        entityType: 'question',
+        entityId: question.id,
+        action: 'update',
+        summary: `Updated question (${question.topicLabel.en}): ${question.prompt.en}`,
+        payload: question,
+      });
+      await refreshData(studentProfileId);
+      return question;
+    },
+    [language, refreshData, studentProfileId]
+  );
+
+  const removeLocalQuestion = useCallback(
+    async (questionId: string) => {
+      const existing = allQuestions.find((q) => q.id === questionId);
+      const isSampleOverride = quizService.isSampleQuestionId(questionId);
+      await quizService.deleteLocalQuestion(questionId);
+      if (existing) {
+        await progressService.logActivity({
+          actorRole: 'teacher',
+          actorName: roleService.getProfileForRole('teacher', language).name,
+          category: 'quiz',
+          description: {
+            en: `${isSampleOverride ? 'Reverted local question edit' : 'Deleted question'} (${existing.topicLabel.en})`,
+            kn: `${isSampleOverride ? 'ಪ್ರಶ್ನೆಯ ಸ್ಥಳೀಯ ಬದಲಾವಣೆ ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ' : 'ಪ್ರಶ್ನೆ ಅಳಿಸಲಾಗಿದೆ'} (${existing.topicLabel.kn})`,
+            hi: `${isSampleOverride ? 'प्रश्न का स्थानीय बदलाव हटाया गया' : 'प्रश्न हटाया गया'} (${existing.topicLabel.hi})`,
+          },
+        });
+        await syncService.enqueueLocalMutation({
+          entityType: 'question',
+          entityId: questionId,
+          action: 'delete',
+          summary: `${isSampleOverride ? 'Reverted question edit' : 'Deleted question'}: ${existing.prompt.en}`,
+        });
+      }
+      await refreshData(studentProfileId);
+    },
+    [allQuestions, language, refreshData, studentProfileId]
+  );
+
   const createLearningPacket = useCallback(
     async (title: string, subjectId: SubjectId, lessonIds: string[]) => {
       const selected = lessons.filter((l) => lessonIds.includes(l.id));
@@ -714,6 +797,9 @@ export const PathweaveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         createLocalLesson,
         updateLocalLesson,
         removeLocalLesson,
+        createLocalQuestion,
+        updateLocalQuestion,
+        removeLocalQuestion,
         createLearningPacket,
         exportPacketJson,
         resetLocalStorage,

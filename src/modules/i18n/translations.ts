@@ -25,6 +25,7 @@ export interface UIMessages {
     myProgress: string;
     students: string;
     learningMaterials: string;
+    questions: string;
     performance: string;
     synchronization: string;
     settings: string;
@@ -68,12 +69,14 @@ export interface UIMessages {
     localQueueItems: string;
     studentManagement: string;
     materialManagement: string;
+    questionManagement: string;
     performanceOverview: string;
     weakAreasTitle: string;
     syncStatusTitle: string;
     recentClassroomActivity: string;
     addStudent: string;
     addMaterial: string;
+    addQuestion: string;
     createPacket: string;
     stage1SyncNotice: string;
   };
@@ -131,6 +134,7 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       myProgress: 'My Progress',
       students: 'Students',
       learningMaterials: 'Learning Materials',
+      questions: 'Question Bank',
       performance: 'Performance',
       synchronization: 'Synchronization',
       settings: 'Settings',
@@ -174,12 +178,14 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       localQueueItems: 'Local Changes Staged',
       studentManagement: 'Student Management',
       materialManagement: 'Learning Material Management',
+      questionManagement: 'Question Management',
       performanceOverview: 'Student Performance Overview',
       weakAreasTitle: 'Topic-Wise Weak Areas',
       syncStatusTitle: 'Synchronization Status',
       recentClassroomActivity: 'Recent Classroom Activity',
       addStudent: 'Add Student',
       addMaterial: 'Create Local Lesson',
+      addQuestion: 'Add Question',
       createPacket: 'Package Learning Packet',
       stage1SyncNotice:
         'Stage 3 Offline Mode: Lessons, quizzes, topic mastery, adaptive recommendations, and pending synchronization events are persisted locally in IndexedDB.',
@@ -239,6 +245,7 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       myProgress: 'ನನ್ನ ಪ್ರಗತಿ',
       students: 'ವಿದ್ಯಾರ್ಥಿಗಳು',
       learningMaterials: 'ಕಲಿಕಾ ಸಾಮಗ್ರಿಗಳು',
+      questions: 'ಪ್ರಶ್ನೆ ಬ್ಯಾಂಕ್',
       performance: 'ಸಾಧನೆ',
       synchronization: 'ಸಿಂಕ್ರೊನೈಸೇಶನ್',
       settings: 'ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
@@ -282,12 +289,14 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       localQueueItems: 'ಸ್ಥಳೀಯ ಬದಲಾವಣೆಗಳು',
       studentManagement: 'ವಿದ್ಯಾರ್ಥಿಗಳ ನಿರ್ವಹಣೆ',
       materialManagement: 'ಕಲಿಕಾ ಸಾಮಗ್ರಿ ನಿರ್ವಹಣೆ',
+      questionManagement: 'ಪ್ರಶ್ನೆಗಳ ನಿರ್ವಹಣೆ',
       performanceOverview: 'ವಿದ್ಯಾರ್ಥಿಗಳ ಸಾಧನೆ ಸಾರಾಂಶ',
       weakAreasTitle: 'ವಿಷಯವಾರು ದುರ್ಬಲ ಕ್ಷೇತ್ರಗಳು',
       syncStatusTitle: 'ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಸ್ಥಿತಿ',
       recentClassroomActivity: 'ಇತ್ತೀಚಿನ ತರಗತಿ ಚಟುವಟಿಕೆ',
       addStudent: 'ವಿದ್ಯಾರ್ಥಿಯನ್ನು ಸೇರಿಸಿ',
       addMaterial: 'ಹೊಸ ಸ್ಥಳೀಯ ಪಾಠ ರಚಿಸಿ',
+      addQuestion: 'ಹೊಸ ಪ್ರಶ್ನೆ ಸೇರಿಸಿ',
       createPacket: 'ಕಲಿಕಾ ಪ್ಯಾಕೆಟ್ ತಯಾರಿಸಿ',
       stage1SyncNotice:
         'ಹಂತ 3 ಆಫ್‌ಲೈನ್ ಮೋಡ್: ಪಾಠಗಳು, ರಸಪ್ರಶ್ನೆಗಳು, ವಿಷಯ ಪ್ರಗತಿ, ಹೊಂದಾಣಿಕೆಯ ಶಿಫಾರಸುಗಳು ಮತ್ತು ಬಾಕಿಯಿರುವ ಸಿಂಕ್ ಘಟನೆಗಳು IndexedDB ಯಲ್ಲಿ ಸ್ಥಳೀಯವಾಗಿ ಉಳಿಯುತ್ತವೆ.',
@@ -347,6 +356,7 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       myProgress: 'मेरी प्रगति',
       students: 'छात्र',
       learningMaterials: 'शिक्षण सामग्री',
+      questions: 'प्रश्न बैंक',
       performance: 'प्रदर्शन',
       synchronization: 'सिंक्रोनाइज़ेशन',
       settings: 'सेटिंग्स',
@@ -390,12 +400,14 @@ export const TRANSLATIONS: Record<LanguageCode, UIMessages> = {
       localQueueItems: 'स्थानीय परिवर्तन कतार',
       studentManagement: 'छात्र प्रबंधन',
       materialManagement: 'शिक्षण सामग्री प्रबंधन',
+      questionManagement: 'प्रश्न प्रबंधन',
       performanceOverview: 'छात्र प्रदर्शन सारांश',
       weakAreasTitle: 'विषयवार कमजोर क्षेत्र',
       syncStatusTitle: 'सिंक्रोनाइज़ेशन स्थिति',
       recentClassroomActivity: 'हाल की कक्षा गतिविधि',
       addStudent: 'छात्र जोड़ें',
       addMaterial: 'नया स्थानीय पाठ बनाएं',
+      addQuestion: 'नया प्रश्न जोड़ें',
       createPacket: 'शिक्षण पैकेट तैयार करें',
       stage1SyncNotice:
         'चरण 3 ऑफ़लाइन मोड: पाठ, प्रश्नोत्तरी, विषयवार प्रगति, अनुकूली अनुशंसाएँ और लंबित सिंक घटनाएँ IndexedDB में स्थानीय रूप से सहेजी जाती हैं।',
